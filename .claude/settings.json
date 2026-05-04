@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f \"next-server\")",
+      "Bash(pkill -f \"nest start\")",
+      "Bash(npx next *)",
+      "Bash(curl -s http://localhost:3000)",
+      "WebSearch"
+    ]
+  }
+}
