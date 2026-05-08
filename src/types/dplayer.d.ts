@@ -12,7 +12,11 @@ declare module "dplayer" {
     video: {
       url: string;
       type?: string;
-      customType?: Record<string, (video: HTMLVideoElement) => void>;
+      customType?: Record<string, (video: HTMLVideoElement, player: DPlayer) => void>;
+    };
+    pluginOptions?: {
+      hls?: Record<string, unknown>;
+      flv?: { mediaDataSource?: Record<string, unknown> };
     };
     danmaku?: {
       id: string;

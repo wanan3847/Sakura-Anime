@@ -42,7 +42,7 @@ export default function Pagination({ current, total, onChange }: PaginationProps
               ? "bg-primary text-white"
               : page === "..."
               ? "text-muted cursor-default"
-              : "bg-card hover:bg-card-hover text-muted hover:text-white"
+              : "bg-card hover:bg-card-hover text-muted hover:text-primary"
           }`}
         >
           {page}

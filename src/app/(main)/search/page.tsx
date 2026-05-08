@@ -7,7 +7,7 @@ import Pagination from "@/components/common/Pagination";
 import Loading from "@/components/common/Loading";
 
 interface AnimeItem {
-  vod_id: string;
+  vod_id: string | number;
   vod_name: string;
   vod_pic: string;
   vod_remarks: string;
@@ -59,7 +59,7 @@ function SearchContent() {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="搜索动漫..."
-          className="flex-1 h-12 px-4 rounded-lg bg-card border border-border text-white placeholder:text-muted focus:outline-none focus:border-primary"
+          className="flex-1 h-12 px-4 rounded-lg bg-card border border-border text-foreground placeholder:text-muted focus:outline-none focus:border-primary"
         />
         <button
           type="submit"
@@ -75,7 +75,7 @@ function SearchContent() {
       ) : q ? (
         <>
           <p className="text-muted text-sm">
-            搜索 &ldquo;<span className="text-white">{q}</span>&rdquo; 找到 {animes.length} 个结果
+            搜索 &ldquo;<span className="text-foreground">{q}</span>&rdquo; 找到 {animes.length} 个结果
           </p>
           <AnimeGrid animes={animes} />
           <Pagination

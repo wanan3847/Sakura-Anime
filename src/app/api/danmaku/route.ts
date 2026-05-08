@@ -6,11 +6,25 @@ import { auth } from "@/lib/auth";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const animeId = searchParams.get("animeId");
-    const episodeId = searchParams.get("episodeId");
+
+    // DPlayer 发送 id=${animeId}_${episodeId} 格式
+    let animeId = searchParams.get("animeId");
+    let episodeId = searchParams.get("episodeId");
 
     if (!animeId || !episodeId) {
-      return NextResponse.json({ error: "缺少参数" }, { status: 400 });
+      const id = searchParams.get("id");
+      if (id) {
+        // animeId 是数字，episodeId 是URL，用第一个下划线分割
+        const firstUnderscore = id.indexOf("_");
+        if (firstUnderscore > 0) {
+          animeId = id.substring(0, firstUnderscore);
+          episodeId = id.substring(firstUnderscore + 1);
+        }
+      }
+    }
+
+    if (!animeId || !episodeId) {
+      return NextResponse.json({ data: [] });
     }
 
     const danmakus = await db.danmaku.findMany({
@@ -18,9 +32,12 @@ export async function GET(request: NextRequest) {
       orderBy: { time: "asc" },
     });
 
-    return NextResponse.json(danmakus);
-  } catch {
-    return NextResponse.json({ error: "获取弹幕失败" }, { status: 500 });
+    // DPlayer 期望 { data: [[time, type, color, author, text], ...] }
+    const formatted = danmakus.map((d) => [d.time, d.type, d.color, d.userId || "", d.text]);
+    return NextResponse.json({ data: formatted });
+  } catch (e) {
+    console.error("获取弹幕失败:", e);
+    return NextResponse.json({ error: "获取弹幕失败", details: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }
 
@@ -48,7 +65,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(danmaku);
-  } catch {
-    return NextResponse.json({ error: "发送弹幕失败" }, { status: 500 });
+  } catch (e) {
+    console.error("发送弹幕失败:", e);
+    return NextResponse.json({ error: "发送弹幕失败", details: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 import AnimeCard from "./AnimeCard";
 
 interface Anime {
-  vod_id: string;
+  vod_id: string | number;
   vod_name: string;
   vod_pic: string;
   vod_remarks: string;
@@ -18,7 +18,7 @@ export default function AnimeGrid({ animes, title }: AnimeGridProps) {
   return (
     <section>
       {title && (
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
           <span className="w-1 h-6 bg-primary rounded-full" />
           {title}
         </h2>
@@ -26,8 +26,8 @@ export default function AnimeGrid({ animes, title }: AnimeGridProps) {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {animes.map((anime) => (
           <AnimeCard
-            key={anime.vod_id}
-            id={anime.vod_id}
+            key={String(anime.vod_id)}
+            id={String(anime.vod_id)}
             title={anime.vod_name}
             cover={anime.vod_pic}
             remarks={anime.vod_remarks}

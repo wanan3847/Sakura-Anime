@@ -21,6 +21,7 @@ model User {
   favorites  Favorite[]
   histories  History[]
   danmakus   Danmaku[]
+  donationImages DonationImage[]
 }
 
 model Favorite {
@@ -74,4 +75,26 @@ model VideoSource {
   priority  Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  animeId   String
+  animeName String
+  animePic  String?
+  dayOfWeek Int      // 0=周日 1=周一 ... 6=周六
+  timeSlot  String?  // 如 "22:00"
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DonationImage {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  caption   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

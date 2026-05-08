@@ -5,7 +5,12 @@
       "Bash(pkill -f \"nest start\")",
       "Bash(npx next *)",
       "Bash(curl -s http://localhost:3000)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(curl -s --max-time 10 \"https://bfzyapi.com/api.php/provide/vod/?ac=list&t=41&pg=1&pagesize=5\")",
+      "Bash(curl -s --max-time 10 \"https://bfzyapi.com/api.php/provide/vod/?ac=list&wd=海贼王&pg=1&pagesize=3\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(f\\\\\"{i['vod_id']}: {i['vod_name']} - {i['vod_remarks']}\\\\\"\\) for i in d.get\\('list',[]\\)]\")",
+      "Bash(curl -s --max-time 10 \"https://bfzyapi.com/api.php/provide/vod/?ac=detail&ids=12349\")",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

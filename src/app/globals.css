@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f0f1a;
-  --foreground: #e8e8f0;
-  --card: #1a1a2e;
-  --card-hover: #222240;
-  --primary: #e94560;
-  --primary-hover: #d63851;
-  --secondary: #16213e;
-  --accent: #0f3460;
-  --muted: #6b7280;
-  --border: #2a2a4a;
+  --background: #fdf8f9;
+  --foreground: #1c140d;
+  --card: #ffffff;
+  --card-hover: #fff5f8;
+  --primary: #ff69b4;
+  --primary-hover: #e55a9e;
+  --secondary: #fff0f5;
+  --accent: #fce7f3;
+  --muted: #9a7b8a;
+  --border: #f3d5e0;
 }
 
 @theme inline {
@@ -32,22 +32,34 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  touch-action: manipulation;
 }
 
-/* 滚动条 */
+/* 滚动条 - Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 105, 180, 0.5) var(--accent);
+}
+
+/* 滚动条 - Chromium/Safari */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--secondary);
+  background: var(--accent);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: rgba(255, 105, 180, 0.5);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: var(--primary-hover);
+}
+
+/* 选中高亮 */
+::selection {
+  background: rgba(255, 105, 180, 0.3);
 }
 
 /* DPlayer 弹幕样式 */

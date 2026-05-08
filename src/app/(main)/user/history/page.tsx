@@ -40,7 +40,7 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
         <Clock className="w-7 h-7 text-blue-400" />
         观看历史
       </h1>
@@ -65,7 +65,7 @@ export default function HistoryPage() {
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-white text-sm font-medium truncate">{h.animeName}</h3>
+                <h3 className="text-foreground text-sm font-medium truncate">{h.animeName}</h3>
                 {h.episodeName && (
                   <p className="text-primary text-xs mt-1">看到: {h.episodeName}</p>
                 )}

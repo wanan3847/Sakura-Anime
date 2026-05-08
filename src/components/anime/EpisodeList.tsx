@@ -53,7 +53,7 @@ export default function EpisodeList({ sources, currentEpisode, onEpisodeClick }:
             className={`px-2 py-1.5 rounded text-sm truncate transition-colors ${
               ep.url === currentEpisode
                 ? "bg-primary text-white"
-                : "bg-card hover:bg-card-hover text-muted hover:text-white"
+                : "bg-card hover:bg-card-hover text-muted hover:text-primary"
             }`}
             title={ep.name}
           >

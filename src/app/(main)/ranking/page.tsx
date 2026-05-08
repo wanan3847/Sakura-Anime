@@ -8,11 +8,12 @@ import Loading from "@/components/common/Loading";
 import { getAnimeCover } from "@/lib/utils";
 
 interface AnimeItem {
-  vod_id: string;
+  vod_id: string | number;
   vod_name: string;
   vod_pic: string;
   vod_remarks: string;
   vod_year: string;
+  vod_score?: string;
   type_name: string;
 }
 
@@ -31,7 +32,7 @@ export default function RankingPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/anime?page=1&limit=50&sort=${activeTab}`);
+        const res = await fetch(`/api/anime?page=1&limit=50&sort=${activeTab}&type=日本动漫`);
         if (res.ok) {
           const data = await res.json();
           setAnimes(data.list || []);
@@ -45,7 +46,7 @@ export default function RankingPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
         <Trophy className="w-7 h-7 text-yellow-400" />
         排行榜
       </h1>
@@ -75,7 +76,7 @@ export default function RankingPage() {
         <div className="space-y-3">
           {animes.map((anime, i) => (
             <Link
-              key={anime.vod_id}
+              key={String(anime.vod_id)}
               href={`/anime/${anime.vod_id}`}
               className="flex items-center gap-4 p-3 rounded-lg bg-card hover:bg-card-hover transition-colors"
             >
@@ -98,11 +99,17 @@ export default function RankingPage() {
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-white text-sm font-medium truncate">{anime.vod_name}</h3>
+                <h3 className="text-foreground text-sm font-medium truncate">{anime.vod_name}</h3>
                 <p className="text-muted text-xs mt-1">
                   {[anime.type_name, anime.vod_year].filter(Boolean).join(" · ")}
                 </p>
               </div>
+              {anime.vod_score && (
+                <span className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-600 text-xs rounded shrink-0">
+                  <Star className="w-3 h-3" />
+                  {anime.vod_score}
+                </span>
+              )}
               {anime.vod_remarks && (
                 <span className="px-2 py-1 bg-primary/20 text-primary text-xs rounded shrink-0">
                   {anime.vod_remarks}

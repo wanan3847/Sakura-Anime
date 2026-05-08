@@ -13,7 +13,7 @@ import { parsePlaySources } from "@/lib/api";
 import type { PlaySource, Episode } from "@/lib/api";
 
 interface AnimeDetail {
-  vod_id: string;
+  vod_id: string | number;
   vod_name: string;
   vod_pic: string;
   vod_year: string;
@@ -25,6 +25,7 @@ interface AnimeDetail {
   type_name: string;
   vod_time: string;
   vod_class: string;
+  vod_score?: string;
   vod_director: string;
   vod_actor: string;
 }
@@ -64,14 +65,15 @@ export default function AnimeDetailPage() {
   const handleFavorite = async () => {
     if (!anime) return;
     try {
+      const animeId = String(anime.vod_id);
       if (isFavorited) {
-        await fetch(`/api/favorites?animeId=${anime.vod_id}`, { method: "DELETE" });
+        await fetch(`/api/favorites?animeId=${animeId}`, { method: "DELETE" });
       } else {
         await fetch("/api/favorites", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            animeId: anime.vod_id,
+            animeId,
             animeName: anime.vod_name,
             animeCover: anime.vod_pic,
           }),
@@ -107,12 +109,17 @@ export default function AnimeDetailPage() {
 
         {/* 信息 */}
         <div className="flex-1 space-y-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">{anime.vod_name}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{anime.vod_name}</h1>
           <div className="flex flex-wrap gap-3 text-sm text-muted">
             {anime.type_name && <span className="px-2 py-1 bg-card rounded">{anime.type_name}</span>}
             {anime.vod_area && <span className="px-2 py-1 bg-card rounded">{anime.vod_area}</span>}
             {anime.vod_year && <span className="px-2 py-1 bg-card rounded">{anime.vod_year}</span>}
             {anime.vod_class && <span className="px-2 py-1 bg-card rounded">{anime.vod_class}</span>}
+            {anime.vod_score && (
+              <span className="px-2 py-1 bg-yellow-500/20 text-yellow-600 rounded flex items-center gap-1">
+                <Star className="w-3 h-3" /> {anime.vod_score}
+              </span>
+            )}
           </div>
           {anime.vod_director && (
             <p className="text-sm text-muted">导演: {anime.vod_director}</p>
@@ -149,7 +156,7 @@ export default function AnimeDetailPage() {
       {/* 剧集列表 */}
       {sources.length > 0 && (
         <section>
-          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-primary" />
             选集播放
           </h2>
@@ -162,7 +169,7 @@ export default function AnimeDetailPage() {
 
       {/* 相关推荐 */}
       <section>
-        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
           <Star className="w-5 h-5 text-primary" />
           相关推荐
         </h2>

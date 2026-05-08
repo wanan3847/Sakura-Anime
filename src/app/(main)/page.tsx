@@ -5,9 +5,10 @@ import AnimeSlider from "@/components/anime/AnimeSlider";
 import AnimeGrid from "@/components/anime/AnimeGrid";
 import Loading from "@/components/common/Loading";
 import Link from "next/link";
+import { Calendar } from "lucide-react";
 
 interface AnimeItem {
-  vod_id: string;
+  vod_id: string | number;
   vod_name: string;
   vod_pic: string;
   vod_remarks: string;
@@ -21,36 +22,81 @@ interface AnimeListResponse {
   pagecount: number;
 }
 
-const categories = [
-  { label: "日本动漫", type: "日本动漫" },
-  { label: "国产动漫", type: "国产动漫" },
-  { label: "动漫电影", type: "动漫电影" },
-  { label: "欧美动漫", type: "欧美动漫" },
-];
+interface ScheduleItem {
+  id: string;
+  animeId: string;
+  animeName: string;
+  animePic: string | null;
+  dayOfWeek: number;
+  timeSlot: string | null;
+}
+
+const DAY_NAMES = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
 export default function HomePage() {
   const [recommend, setRecommend] = useState<AnimeItem[]>([]);
   const [latest, setLatest] = useState<AnimeItem[]>([]);
+  const [schedule, setSchedule] = useState<Record<number, ScheduleItem[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [recRes, latestRes] = await Promise.all([
-          fetch("/api/anime?page=1&limit=12&sort=hits"),
-          fetch("/api/anime?page=1&limit=24&sort=time"),
+        const [recRes, latestRes, scheduleRes] = await Promise.all([
+          fetch("/api/anime?page=1&limit=12&sort=hits&type=日本动漫"),
+          fetch("/api/anime?page=1&limit=24&sort=time&type=日本动漫"),
+          fetch("/api/schedule"),
         ]);
+
+        let recList: AnimeItem[] = [];
+        let latestList: AnimeItem[] = [];
 
         if (recRes.ok) {
           const data: AnimeListResponse = await recRes.json();
-          setRecommend(data.list || []);
+          recList = data.list || [];
         }
         if (latestRes.ok) {
           const data: AnimeListResponse = await latestRes.json();
-          setLatest(data.list || []);
+          latestList = data.list || [];
+        }
+
+        // 批量获取详情拿图片（list接口不返回vod_pic）
+        const allItems = [...recList, ...latestList];
+        const uniqueIds = [...new Set(allItems.map((i) => i.vod_id))];
+        const detailMap = new Map<string, AnimeItem>();
+
+        await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const res = await fetch(`/api/anime/${id}`);
+              if (res.ok) {
+                const detail = await res.json();
+                detailMap.set(String(id), detail);
+              }
+            } catch {}
+          })
+        );
+
+        const enrichItem = (item: AnimeItem): AnimeItem => {
+          const detail = detailMap.get(String(item.vod_id));
+          if (detail) {
+            return {
+              ...item,
+              vod_pic: detail.vod_pic || item.vod_pic,
+              vod_content: detail.vod_content || item.vod_content,
+            };
+          }
+          return item;
+        };
+
+        setRecommend(recList.map(enrichItem));
+        setLatest((latestList.length > 0 ? latestList : recList).map(enrichItem));
+
+        if (scheduleRes.ok) {
+          const scheduleData = await scheduleRes.json();
+          setSchedule(scheduleData);
         }
       } catch {
-        // 使用示例数据
         setRecommend(getSampleAnimes());
         setLatest(getSampleAnimes().slice(0, 12));
       } finally {
@@ -68,18 +114,59 @@ export default function HomePage() {
       {/* 轮播推荐 */}
       <AnimeSlider animes={recommend.length > 0 ? recommend : getSampleAnimes()} />
 
-      {/* 分类入口 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {categories.map((cat) => (
-          <Link
-            key={cat.type}
-            href={`/category?type=${encodeURIComponent(cat.type)}`}
-            className="p-4 rounded-xl bg-card hover:bg-card-hover border border-border transition-colors text-center"
-          >
-            <span className="text-white font-medium">{cat.label}</span>
-          </Link>
-        ))}
-      </div>
+      {/* 周番表 */}
+      {Object.keys(schedule).length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-foreground">周番表</h2>
+            </div>
+            <Link href="/schedule" className="text-sm text-primary hover:text-primary-hover transition-colors">
+              查看全部 →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            {DAY_NAMES.map((dayName, dayIdx) => {
+              const items = schedule[dayIdx] || [];
+              const today = new Date().getDay();
+              const isToday = dayIdx === today;
+
+              return (
+                <div
+                  key={dayIdx}
+                  className={`rounded-lg border p-2 min-h-[80px] transition-all ${
+                    isToday
+                      ? "border-l-4 border-l-primary border-t-primary/20 border-r-primary/20 border-b-primary/20 bg-primary/5"
+                      : "border-border bg-card"
+                  }`}
+                >
+                  <div className="text-center mb-2">
+                    <span className={`text-xs font-bold ${isToday ? "text-primary" : "text-foreground"}`}>
+                      {dayName}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {items.slice(0, 3).map((item) => (
+                      <Link
+                        key={item.id}
+                        href={`/anime/${item.animeId}`}
+                        className="block text-[10px] text-foreground hover:text-primary truncate transition-colors"
+                        title={item.animeName}
+                      >
+                        {item.animeName}
+                      </Link>
+                    ))}
+                    {items.length > 3 && (
+                      <span className="text-[9px] text-muted">+{items.length - 3}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 热门推荐 */}
       <AnimeGrid

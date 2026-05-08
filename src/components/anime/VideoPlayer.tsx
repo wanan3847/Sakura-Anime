@@ -7,74 +7,156 @@ interface VideoPlayerProps {
   animeId: string;
   episodeId: string;
   onTimeUpdate?: (time: number) => void;
+  onError?: () => void;
 }
 
-export default function VideoPlayer({ url, animeId, episodeId, onTimeUpdate }: VideoPlayerProps) {
+export default function VideoPlayer({ url, animeId, episodeId, onTimeUpdate, onError }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<unknown>(null);
+  const dpRef = useRef<unknown>(null);
+  const hlsRef = useRef<{ destroy: () => void } | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || !url) return;
 
-    let dp: unknown = null;
+    let cancelled = false;
+    let mediaErrorRetries = 0;
 
-    const initPlayer = async () => {
-      const DPlayer = (await import("dplayer")).default;
+    const createHlsInstance = (
+      Hls: typeof import("hls.js").default,
+      video: HTMLVideoElement,
+      src: string,
+    ) => {
+      const hls = new Hls({
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+        enableWorker: true,
+        defaultAudioCodec: "mp4a.40.2",
+        appendErrorMaxRetry: 6,
+      });
+      hlsRef.current = hls as unknown as { destroy: () => void };
+
+      hls.loadSource(src);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(() => {});
+      });
+
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
+        const tracks = data.audioTracks;
+        if (tracks.length > 1) {
+          const aacTrack = tracks.find(
+            (t) => t.audioCodec && t.audioCodec.indexOf("mp4a") !== -1,
+          );
+          if (aacTrack && aacTrack.id !== hls.audioTrack) {
+            hls.audioTrack = aacTrack.id;
+          }
+        }
+      });
+
+      let networkErrorRetries = 0;
+
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!data.fatal) return;
+
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          networkErrorRetries++;
+          if (networkErrorRetries <= 2) {
+            hls.startLoad();
+          } else {
+            hls.destroy();
+            hlsRef.current = null;
+            if (onError) onError();
+          }
+          return;
+        }
+
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          mediaErrorRetries++;
+          if (mediaErrorRetries <= 3) {
+            hls.recoverMediaError();
+          } else {
+            hls.destroy();
+            hlsRef.current = null;
+            if (onError) onError();
+          }
+          return;
+        }
+
+        hls.destroy();
+        hlsRef.current = null;
+        if (onError) onError();
+      });
+
+      return hls;
+    };
+
+    (async () => {
+      const HlsModule = await import("hls.js");
+      if (cancelled) return;
+      const Hls = HlsModule.default;
+
+      const DPlayerModule = await import("dplayer");
+      if (cancelled) return;
+      const DPlayer = DPlayerModule.default;
+
+      const container = containerRef.current;
+      if (!container || cancelled) return;
 
       const isHls = url.includes(".m3u8");
-      const container = containerRef.current;
-      if (!container) return;
+      const proxyUrl = isHls ? `/api/proxy?url=${encodeURIComponent(url)}` : url;
 
-      dp = new DPlayer({
+      const dp = new DPlayer({
         container,
-        autoplay: true,
-        theme: "#e94560",
-        loop: false,
+        autoplay: false,
+        theme: "#ff69b4",
         screenshot: true,
         hotkey: true,
-        preload: "auto",
-        volume: 0.7,
-        mutex: true,
+        danmaku: {
+          id: `${animeId}_${episodeId}`,
+          api: "/api/danmaku",
+        },
         video: {
-          url,
+          url: proxyUrl,
           type: isHls ? "customHls" : "auto",
           customType: {
-            customHls: async (video: HTMLVideoElement) => {
-              const Hls = (await import("hls.js")).default;
+            customHls: (video: HTMLVideoElement) => {
+              if (cancelled) return;
+
               if (Hls.isSupported()) {
-                const hls = new Hls();
-                hls.loadSource(video.src);
-                hls.attachMedia(video);
+                const blankBlob = new Blob([new Uint8Array(0)], { type: "video/mp4" });
+                video.src = URL.createObjectURL(blankBlob);
+                video.load();
+
+                createHlsInstance(Hls, video, proxyUrl);
+              } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                video.src = proxyUrl;
               }
             },
           },
         },
-        danmaku: {
-          id: `${animeId}_${episodeId}`,
-          api: "/api/danmaku",
-          addition: [],
-        },
-        api: {
-          id: `${animeId}_${episodeId}`,
-          url: "/api/danmaku",
-        },
-      });
+      } as unknown as ConstructorParameters<typeof DPlayer>[0]);
 
-      playerRef.current = dp;
+      dpRef.current = dp;
 
-      // 监听时间更新
       if (onTimeUpdate) {
-        (dp as { video: HTMLVideoElement }).video.addEventListener("timeupdate", () => {
-          onTimeUpdate((dp as { video: HTMLVideoElement }).video.currentTime);
+        dp.video.addEventListener("timeupdate", () => {
+          onTimeUpdate(dp.video.currentTime);
         });
       }
-    };
-
-    initPlayer();
+    })();
 
     return () => {
-      if (playerRef.current && typeof (playerRef.current as { destroy?: () => void }).destroy === "function") {
-        (playerRef.current as { destroy: () => void }).destroy();
+      cancelled = true;
+      const hls = hlsRef.current;
+      if (hls && typeof hls.destroy === "function") {
+        hls.destroy();
+        hlsRef.current = null;
+      }
+      const dp = dpRef.current as { destroy?: () => void } | null;
+      if (dp && typeof dp.destroy === "function") {
+        dp.destroy();
+        dpRef.current = null;
       }
     };
   }, [url, animeId, episodeId, onTimeUpdate]);

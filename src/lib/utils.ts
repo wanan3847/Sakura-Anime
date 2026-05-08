@@ -30,13 +30,18 @@ export function formatDate(date: string | Date): string {
 
 // 占位图URL
 export function getPlaceholderImage(width: number, height: number, text?: string): string {
-  const bg = "1a1a2e";
-  const color = "e94560";
-  const encoded = text ? encodeURIComponent(text) : "Sakura Anime";
+  const bg = "fce7f3";
+  const color = "ff69b4";
+  const encoded = text ? encodeURIComponent(text) : "Sakura";
   return `https://placehold.co/${width}x${height}/${bg}/${color}?text=${encoded}`;
 }
 
 // 动漫封面占位图
 export function getAnimeCover(title?: string): string {
   return getPlaceholderImage(300, 400, title || "Anime");
+}
+
+// 检查URL是否是有效的图片URL
+export function isValidImageUrl(url: string | undefined | null): boolean {
+  return !!url && (url.startsWith("http://") || url.startsWith("https://"));
 }
