@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Layout, Database, Users, MessageSquare, Calendar, Coffee, ArrowLeft, ShieldX } from "lucide-react";
+import { Layout, Database, Users, MessageSquare, Calendar, Coffee, ArrowLeft, ShieldX, Menu, X } from "lucide-react";
 import Loading from "@/components/common/Loading";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (status === "loading") return <Loading />;
 
@@ -42,41 +44,65 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  const sidebar = (
+    <aside className="w-64 bg-white border-r border-border min-h-screen p-4 shrink-0">
+      <div className="mb-6">
+        <Link href="/" className="flex items-center gap-2 text-muted hover:text-primary transition-colors text-sm">
+          <ArrowLeft className="w-4 h-4" />
+          返回主站
+        </Link>
+      </div>
+      <h2 className="text-lg font-bold text-foreground mb-4">后台管理</h2>
+      <nav className="space-y-1">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                isActive
+                  ? "bg-primary text-white"
+                  : "text-muted hover:text-foreground hover:bg-accent/50"
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+
   return (
     <div className="min-h-screen bg-background">
+      {/* 移动端顶栏 */}
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-border">
+        <h2 className="text-lg font-bold text-foreground">后台管理</h2>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 text-muted hover:text-primary"
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
       <div className="flex">
-        {/* 侧边栏 */}
-        <aside className="w-64 bg-white border-r border-border min-h-screen p-4 shrink-0">
-          <div className="mb-6">
-            <Link href="/" className="flex items-center gap-2 text-muted hover:text-primary transition-colors text-sm">
-              <ArrowLeft className="w-4 h-4" />
-              返回主站
-            </Link>
+        {/* 桌面端侧边栏 */}
+        <div className="hidden lg:block">{sidebar}</div>
+
+        {/* 移动端侧边栏遮罩 */}
+        {sidebarOpen && (
+          <div className="lg:hidden fixed inset-0 z-40">
+            <div className="absolute inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} />
+            <div className="relative z-50">{sidebar}</div>
           </div>
-          <h2 className="text-lg font-bold text-foreground mb-4">后台管理</h2>
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    isActive
-                      ? "bg-primary text-white"
-                      : "text-muted hover:text-foreground hover:bg-accent/50"
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        )}
 
         {/* 主内容 */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 lg:p-6 min-w-0">
           {children}
         </main>
       </div>

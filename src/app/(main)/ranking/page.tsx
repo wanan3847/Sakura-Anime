@@ -52,7 +52,7 @@ export default function RankingPage() {
       </h1>
 
       {/* 标签切换 */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -78,7 +78,7 @@ export default function RankingPage() {
             <Link
               key={String(anime.vod_id)}
               href={`/anime/${anime.vod_id}`}
-              className="flex items-center gap-4 p-3 rounded-lg bg-card hover:bg-card-hover transition-colors"
+              className="flex items-center gap-2 sm:gap-4 p-3 rounded-lg bg-card hover:bg-card-hover transition-colors"
             >
               <span
                 className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 ${
@@ -105,7 +105,7 @@ export default function RankingPage() {
                 </p>
               </div>
               {anime.vod_score && (
-                <span className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-600 text-xs rounded shrink-0">
+                <span className="hidden sm:flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-600 text-xs rounded shrink-0">
                   <Star className="w-3 h-3" />
                   {anime.vod_score}
                 </span>

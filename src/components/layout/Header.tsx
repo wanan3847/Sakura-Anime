@@ -8,7 +8,7 @@ import { Search, User, Heart, Clock, LogIn, Menu, X, Shield, Coffee } from "luci
 
 const navLinks = [
   { href: "/", label: "首页" },
-  { href: "/category", label: "分类" },
+  { href: "/category", label: "目录" },
   { href: "/ranking", label: "排行榜" },
   { href: "/schedule", label: "周番表" },
 ];
@@ -63,7 +63,7 @@ export default function Header() {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="搜索动漫..."
-                className="w-full h-9 pl-9 pr-4 rounded-lg bg-accent/50 border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary"
+                className="w-full h-10 pl-9 pr-4 rounded-lg bg-accent/50 border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary"
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
             </div>
@@ -130,7 +130,7 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex gap-4 pt-2 border-t border-border">
+              <div className="flex flex-wrap gap-x-4 gap-y-2 pt-2 border-t border-border">
                 <Link href="/donate" className="text-muted hover:text-primary" onClick={() => setMobileMenuOpen(false)}>赞赏</Link>
                 {isLoggedIn ? (
                   <>

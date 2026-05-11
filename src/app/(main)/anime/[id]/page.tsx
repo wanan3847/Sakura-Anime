@@ -127,7 +127,7 @@ export default function AnimeDetailPage() {
           {anime.vod_actor && (
             <p className="text-sm text-muted">主演: {anime.vod_actor}</p>
           )}
-          <p className="text-gray-300 leading-relaxed">{content}</p>
+          <p className="text-muted leading-relaxed">{content}</p>
           <div className="flex gap-3">
             {sources.length > 0 && sources[0].episodes.length > 0 && (
               <Link

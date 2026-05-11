@@ -187,16 +187,22 @@ function PlayContent() {
 
   const handleSendDanmaku = async () => {
     if (!danmakuInput.trim()) return;
+    const dpEl = document.querySelector(".dplayer") as HTMLElement & {
+      dp?: {
+        video: HTMLVideoElement;
+        danmaku: { draw: (d: unknown) => void; send: (d: unknown) => void };
+      };
+    };
+    const dp = dpEl?.dp;
+    const time = dp?.video?.currentTime ?? 0;
     try {
       await fetch("/api/danmaku", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ animeId: params.id, episodeId: currentUrl, text: danmakuInput, time: 0, color: "#ffffff", type: 0 }),
+        body: JSON.stringify({ animeId: params.id, episodeId: currentUrl, text: danmakuInput, time, color: "#ffffff", type: 0 }),
       });
-      // 即时显示弹幕
-      const dpEl = document.querySelector(".dplayer") as HTMLElement & { dp?: { danmaku: { draw: (d: unknown) => void } } };
-      if (dpEl?.dp?.danmaku) {
-        dpEl.dp.danmaku.draw({ text: danmakuInput, color: "#ffffff", type: 0 });
+      if (dp?.danmaku) {
+        dp.danmaku.draw({ text: danmakuInput, color: "#ffffff", type: 0 });
       }
       setDanmakuInput("");
     } catch {}
@@ -225,18 +231,19 @@ function PlayContent() {
   return (
     <div className="space-y-6">
       {/* 顶部信息栏 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-4 flex-wrap">
-          <Link href={`/anime/${params.id}`} className="flex items-center gap-2 text-muted hover:text-primary transition-colors">
-            <ArrowLeft className="w-5 h-5" /> 返回详情
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Link href={`/anime/${params.id}`} className="flex items-center gap-1 text-muted hover:text-primary transition-colors shrink-0">
+            <ArrowLeft className="w-5 h-5" />
+            <span className="hidden sm:inline">返回详情</span>
           </Link>
-          {animeName && <><span className="text-muted">·</span><span className="text-foreground font-medium">{animeName}</span></>}
-          {currentName && <><span className="text-muted">·</span><span className="text-primary">{currentName}</span></>}
-          {currentSource && <><span className="text-muted">·</span><span className="text-sm text-muted">[{currentSource}]</span></>}
+          {animeName && <span className="text-foreground font-medium truncate">{animeName}</span>}
+          {currentName && <span className="text-primary shrink-0">{currentName}</span>}
+          {currentSource && <span className="hidden md:inline text-sm text-muted shrink-0">[{currentSource}]</span>}
         </div>
         <button onClick={toggleFavorite} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:border-primary transition-colors shrink-0" title={isFavorited ? "取消收藏" : "收藏"}>
           <Heart className={`w-5 h-5 transition-colors ${isFavorited ? "fill-primary text-primary" : "text-muted"}`} />
-          <span className="text-sm text-foreground">{isFavorited ? "已收藏" : "收藏"}</span>
+          <span className="hidden sm:inline text-sm text-foreground">{isFavorited ? "已收藏" : "收藏"}</span>
         </button>
       </div>
 
@@ -279,7 +286,7 @@ function PlayContent() {
           )}
 
           {/* 剧集列表 */}
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
             {activeSource?.episodes.map((ep, i) => (
               <button
                 key={i}

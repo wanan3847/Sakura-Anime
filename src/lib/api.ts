@@ -125,14 +125,15 @@ export async function getAnimeList(
   type?: string,
   area?: string,
   year?: string,
-  sort?: string
+  sort?: string,
+  detail = false
 ): Promise<AnimeListResponse> {
-  const cacheKey = `list:${page}:${limit}:${type}:${area}:${year}:${sort}`;
+  const cacheKey = `list:${detail ? "d" : "l"}:${page}:${limit}:${type}:${area}:${year}:${sort}`;
   const cached = getCached<AnimeListResponse>(cacheKey);
   if (cached) return cached;
 
   const params: Record<string, string> = {
-    ac: "list",
+    ac: detail ? "detail" : "list",
     pg: page.toString(),
     pagesize: limit.toString(),
   };

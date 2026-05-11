@@ -57,7 +57,7 @@ export default function AnimeSlider({ animes }: AnimeSliderProps) {
 
       {/* 内容 */}
       <div className="absolute inset-0 flex items-center">
-        <div className="max-w-7xl mx-auto px-8 w-full flex items-center gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 w-full flex items-center gap-4 md:gap-8">
           <div className="hidden md:block relative w-40 h-52 rounded-lg overflow-hidden shrink-0 shadow-2xl">
             {isValidImageUrl(anime.vod_pic) ? (
               <Image

@@ -5,7 +5,7 @@ import AnimeSlider from "@/components/anime/AnimeSlider";
 import AnimeGrid from "@/components/anime/AnimeGrid";
 import Loading from "@/components/common/Loading";
 import Link from "next/link";
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronRight } from "lucide-react";
 
 interface AnimeItem {
   vod_id: string | number;
@@ -109,13 +109,60 @@ export default function HomePage() {
 
   if (loading) return <Loading />;
 
-  return (
-    <div className="space-y-10">
-      {/* 轮播推荐 */}
-      <AnimeSlider animes={recommend.length > 0 ? recommend : getSampleAnimes()} />
+  const today = new Date().getDay();
+  const hasSchedule = Object.keys(schedule).length > 0;
 
-      {/* 周番表 */}
-      {Object.keys(schedule).length > 0 && (
+  return (
+    <div className="space-y-8">
+      {/* 轮播 + 今日番剧 双栏 */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex-1 min-w-0">
+          <AnimeSlider animes={recommend.length > 0 ? recommend : getSampleAnimes()} />
+        </div>
+
+        {/* 今日番剧侧栏 */}
+        {hasSchedule && (
+          <div className="w-full lg:w-80 shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                <h2 className="text-base font-bold text-foreground">今日番剧</h2>
+                <span className="text-xs text-muted">({DAY_NAMES[today]})</span>
+              </div>
+              <Link href="/schedule" className="text-xs text-primary hover:text-primary-hover transition-colors flex items-center gap-0.5">
+                完整周表 <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+              {(schedule[today] || []).map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/anime/${item.animeId}`}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-card-hover transition-colors group"
+                >
+                  {item.animePic ? (
+                    <img src={item.animePic} alt={item.animeName} className="w-10 h-14 object-cover rounded shrink-0" loading="lazy" />
+                  ) : (
+                    <div className="w-10 h-14 rounded shrink-0 bg-gradient-to-br from-pink-200 to-pink-100 flex items-center justify-center">
+                      <span className="text-pink-600 text-xs font-bold">{item.animeName.slice(0, 2)}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{item.animeName}</h3>
+                    {item.timeSlot && <span className="text-xs text-muted">{item.timeSlot}</span>}
+                  </div>
+                </Link>
+              ))}
+              {(schedule[today] || []).length === 0 && (
+                <p className="text-sm text-muted text-center py-4">今日暂无排期</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 宽屏完整周番表 */}
+      {hasSchedule && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -126,39 +173,51 @@ export default function HomePage() {
               查看全部 →
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
             {DAY_NAMES.map((dayName, dayIdx) => {
               const items = schedule[dayIdx] || [];
-              const today = new Date().getDay();
               const isToday = dayIdx === today;
-
               return (
                 <div
                   key={dayIdx}
-                  className={`rounded-lg border p-2 min-h-[80px] transition-all ${
+                  className={`rounded-xl border transition-all ${
                     isToday
-                      ? "border-l-4 border-l-primary border-t-primary/20 border-r-primary/20 border-b-primary/20 bg-primary/5"
+                      ? "border-l-4 border-l-primary border-t border-r border-b border-t-primary/20 border-r-primary/20 border-b-primary/20 bg-primary/5"
                       : "border-border bg-card"
                   }`}
                 >
-                  <div className="text-center mb-2">
-                    <span className={`text-xs font-bold ${isToday ? "text-primary" : "text-foreground"}`}>
+                  <div className="px-3 py-2 border-b border-border">
+                    <span className={`text-sm ${isToday ? "font-extrabold text-primary" : "font-semibold text-foreground"}`}>
                       {dayName}
                     </span>
                   </div>
-                  <div className="space-y-1">
-                    {items.slice(0, 3).map((item) => (
-                      <Link
-                        key={item.id}
-                        href={`/anime/${item.animeId}`}
-                        className="block text-[10px] text-foreground hover:text-primary truncate transition-colors"
-                        title={item.animeName}
-                      >
-                        {item.animeName}
-                      </Link>
-                    ))}
-                    {items.length > 3 && (
-                      <span className="text-[9px] text-muted">+{items.length - 3}</span>
+                  <div className="p-2.5 space-y-2 min-h-[100px] max-h-[300px] overflow-y-auto">
+                    {items.length === 0 ? (
+                      <p className="text-muted text-xs text-center py-3">暂无排期</p>
+                    ) : (
+                      items.map((item) => (
+                        <Link
+                          key={item.id}
+                          href={`/anime/${item.animeId}`}
+                          className="block group"
+                        >
+                          <div className="flex items-start gap-2">
+                            {item.animePic ? (
+                              <img src={item.animePic} alt="" className="w-8 h-11 object-cover rounded shrink-0" loading="lazy" />
+                            ) : (
+                              <div className="w-8 h-11 rounded shrink-0 bg-accent/50" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-xs font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                                {item.animeName}
+                              </h3>
+                              {item.timeSlot && (
+                                <p className="text-[11px] text-muted mt-0.5">{item.timeSlot}</p>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      ))
                     )}
                   </div>
                 </div>

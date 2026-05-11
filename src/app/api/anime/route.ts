@@ -10,8 +10,9 @@ export async function GET(request: NextRequest) {
     const area = searchParams.get("area") || undefined;
     const year = searchParams.get("year") || undefined;
     const sort = searchParams.get("sort") || undefined;
+    const detail = searchParams.get("detail") === "1";
 
-    const data = await getAnimeList(page, limit, type, area, year, sort);
+    const data = await getAnimeList(page, limit, type, area, year, sort, detail);
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

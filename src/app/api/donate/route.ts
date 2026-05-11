@@ -20,7 +20,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    const role = (session?.user as { role?: string })?.role;
+    if (!session?.user) {
+      return NextResponse.json({ error: "请先登录" }, { status: 401 });
+    }
+    const role = (session.user as { role?: string })?.role;
     if (role !== "admin") {
       return NextResponse.json({ error: "仅管理员可操作" }, { status: 403 });
     }
@@ -61,7 +64,10 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
-    const role = (session?.user as { role?: string })?.role;
+    if (!session?.user) {
+      return NextResponse.json({ error: "请先登录" }, { status: 401 });
+    }
+    const role = (session.user as { role?: string })?.role;
     if (role !== "admin") {
       return NextResponse.json({ error: "仅管理员可操作" }, { status: 403 });
     }

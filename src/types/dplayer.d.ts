@@ -23,6 +23,10 @@ declare module "dplayer" {
       api: string;
       addition?: string[];
     };
+    apiBackend?: {
+      read: (opt: { url: string; success: (data: unknown) => void; error: (msg?: string) => void }) => void;
+      send: (opt: { url: string; data: Record<string, unknown>; success: () => void; error: (msg?: string) => void }) => void;
+    };
     api?: {
       id: string;
       url: string;
