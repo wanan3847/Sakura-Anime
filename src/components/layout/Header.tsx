@@ -170,11 +170,10 @@ export default function Header() {
                 )}
                 <Link
                   href="/user/profile"
-                  className="text-muted hover:text-primary transition-colors flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-accent/50"
-                  title={session.user?.name || session.user?.email || ''}
+                  className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm"
                 >
                   <User className="w-4 h-4" />
-                  <span className="hidden lg:inline text-sm text-foreground truncate max-w-[100px]">{session.user?.name || session.user?.email || ''}</span>
+                  <span className="hidden md:inline text-sm">用户</span>
                 </Link>
                 {/* Notification bell - rightmost */}
                 <div className="relative" ref={bellRef}>
