@@ -108,12 +108,12 @@ function CatalogContent() {
           {!loading && <span className="text-sm text-muted">共 {total.toLocaleString()} 部</span>}
         </div>
         <div className="flex items-center gap-2">
-          <form onSubmit={handleSearch} className="relative">
+          <form onSubmit={handleSearch} className="relative w-full sm:w-auto">
             <input
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               placeholder="搜索动漫名称..."
-              className="w-44 h-9 pl-9 pr-3 rounded-lg bg-accent/50 border border-border text-sm focus:outline-none focus:border-primary placeholder:text-muted"
+              className="w-full sm:w-44 h-9 pl-9 pr-3 rounded-lg bg-accent/50 border border-border text-sm focus:outline-none focus:border-primary placeholder:text-muted"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
           </form>

@@ -98,7 +98,7 @@ export default function AnimeDetailPage() {
       {/* 顶部信息 */}
       <div className="flex flex-col md:flex-row gap-6">
         {/* 封面 */}
-        <div className="relative w-48 h-64 rounded-lg overflow-hidden shrink-0 mx-auto md:mx-0">
+        <div className="relative w-32 sm:w-40 md:w-48 aspect-[3/4] rounded-lg overflow-hidden shrink-0 mx-auto md:mx-0">
           <Image
             src={anime.vod_pic || getAnimeCover(anime.vod_name)}
             alt={anime.vod_name}

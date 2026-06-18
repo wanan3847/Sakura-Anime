@@ -96,7 +96,7 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       {/* ============ 大轮播图 ============ */}
-      <div className="relative rounded-2xl overflow-hidden bg-black" style={{ aspectRatio: "21/9" }}>
+      <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] sm:aspect-[16/9] lg:aspect-[21/9] xl:aspect-[25/9]">
         {slides.map((slide, idx) => (
           <Link key={slide.id} href={slide.linkUrl || "#"}
             className={`absolute inset-0 transition-opacity duration-700 ${idx === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
@@ -118,15 +118,15 @@ export default function HomePage() {
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600" />
             )}
-            <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-10 max-w-[60%] z-20">
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-10 max-w-[85%] sm:max-w-[70%] lg:max-w-[60%] z-20">
               {slide.badge && (
                 <span className="inline-block px-2 py-0.5 bg-primary text-white text-xs rounded-full mb-3 shadow-lg">{slide.badge}</span>
               )}
-              <h2 className="text-2xl lg:text-4xl font-bold text-white mb-2 drop-shadow-lg">{slide.title}</h2>
+              <h2 className="text-xl sm:text-2xl lg:text-4xl font-bold text-white mb-1 sm:mb-2 drop-shadow-lg">{slide.title}</h2>
               {slide.subtitle && (
-                <p className="text-white/70 text-sm lg:text-base line-clamp-2 mb-4 drop-shadow-md">{slide.subtitle}</p>
+                <p className="text-white/70 text-xs sm:text-sm lg:text-base line-clamp-2 mb-2 sm:mb-4 drop-shadow-md">{slide.subtitle}</p>
               )}
-              <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors shadow-lg">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-primary hover:bg-primary-hover text-white text-xs sm:text-sm font-medium rounded-lg transition-colors shadow-lg">
                 <Play className="w-4 h-4" /> 立即观看
               </span>
             </div>
@@ -135,17 +135,17 @@ export default function HomePage() {
         {slides.length > 1 && (
           <>
             <button onClick={(e) => { e.preventDefault(); setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length); }}
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur transition-colors">
-              <ChevronLeft className="w-5 h-5" />
+              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/30 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur transition-colors">
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             <button onClick={(e) => { e.preventDefault(); setCurrentSlide((prev) => (prev + 1) % slides.length); }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur transition-colors">
-              <ChevronRight className="w-5 h-5" />
+              className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/30 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur transition-colors">
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 sm:gap-2">
               {slides.map((_, idx) => (
                 <button key={idx} onClick={(e) => { e.preventDefault(); setCurrentSlide(idx); }}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlide ? "bg-white w-8" : "bg-white/40 w-3 hover:bg-white/60"}`} />
+                  className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${idx === currentSlide ? "bg-white w-4 sm:w-8" : "bg-white/40 w-1.5 sm:w-3 hover:bg-white/60"}`} />
               ))}
             </div>
           </>
