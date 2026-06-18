@@ -170,10 +170,11 @@ export default function Header() {
                 )}
                 <Link
                   href="/user/profile"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent/50 transition-colors"
+                  className="text-muted hover:text-primary transition-colors flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-accent/50"
+                  title={session.user?.name || session.user?.email}
                 >
-                  <User className="w-4 h-4 text-muted" />
-                  <span className="text-sm text-foreground">{session.user?.name || session.user?.email}</span>
+                  <User className="w-4 h-4" />
+                  <span className="hidden lg:inline text-sm text-foreground truncate max-w-[100px]">{session.user?.name || session.user?.email}</span>
                 </Link>
                 {/* Notification bell - rightmost */}
                 <div className="relative" ref={bellRef}>
