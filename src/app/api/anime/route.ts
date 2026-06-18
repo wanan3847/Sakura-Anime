@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAnimeList } from "@/lib/api";
+import { getAnimeList, getAnimeListMultiSource } from "@/lib/api";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +11,12 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get("year") || undefined;
     const sort = searchParams.get("sort") || undefined;
     const detail = searchParams.get("detail") === "1";
+    const multi = searchParams.get("multi") === "1";
+
+    if (multi) {
+      const data = await getAnimeListMultiSource(page, limit, type, area, year, sort, detail);
+      return NextResponse.json(data);
+    }
 
     const data = await getAnimeList(page, limit, type, area, year, sort, detail);
     return NextResponse.json(data);

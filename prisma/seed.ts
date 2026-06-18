@@ -30,11 +30,11 @@ async function main() {
 
   // 2. 初始化默认视频源
   const defaultSources = [
-    { name: "暴风", apiUrl: process.env.ANIME_API_URL || "https://bfzyapi.com/api.php/provide/vod/", isActive: true, priority: 10 },
-    { name: "最大", apiUrl: process.env.ANIME_API_BACKUP_URL || "https://api.zuidapi.com/api.php/provide/vod/", isActive: true, priority: 8 },
-    { name: "无尽", apiUrl: process.env.ANIME_API_WUJIN_URL || "https://api.wujinapi.me/api.php/provide/vod/", isActive: true, priority: 6 },
-    { name: "量子", apiUrl: process.env.ANIME_API_LZI_URL || "https://cj.lziapi.com/api.php/provide/vod/", isActive: true, priority: 4 },
-    { name: "非凡资源", apiUrl: process.env.ANIME_API_FFZY_URL || "https://api.ffzyapi.com/api.php/provide/vod/", isActive: true, priority: 3 },
+    { name: "bfzyapi", apiUrl: process.env.ANIME_API_URL || "https://bfzyapi.com/api.php/provide/vod/", isActive: true, priority: 10, typeId: 41 },
+    { name: "zuidapi", apiUrl: process.env.ANIME_API_BACKUP_URL || "https://api.zuidapi.com/api.php/provide/vod/", isActive: true, priority: 8, typeId: 30 },
+    { name: "wujin", apiUrl: process.env.ANIME_API_WUJIN_URL || "https://api.wujinapi.me/api.php/provide/vod/", isActive: true, priority: 6, typeId: 30 },
+    { name: "lzi", apiUrl: process.env.ANIME_API_LZI_URL || "https://cj.lziapi.com/api.php/provide/vod/", isActive: true, priority: 4, typeId: 30 },
+    { name: "ffzyapi", apiUrl: process.env.ANIME_API_FFZY_URL || "https://api.ffzyapi.com/api.php/provide/vod/", isActive: true, priority: 3, typeId: 30 },
   ];
 
   const sourceCount = await db.videoSource.count();

@@ -40,4 +40,19 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# prisma generated client
 /src/generated/prisma
+
+# SQLite database files (contain real user data)
+*.db
+*.db-shm
+*.db-wal
+prisma/prisma/
+
+# AI Agent personal config (not for publishing)
+.claude/
+AGENTS.md
+CLAUDE.md
+
+# code indexing
+.codegraph/

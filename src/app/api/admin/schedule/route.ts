@@ -79,6 +79,12 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
+    const all = searchParams.get("all") === "true";
+
+    if (all) {
+      await db.schedule.deleteMany({});
+      return NextResponse.json({ success: true, deleted: "all" });
+    }
 
     if (!id) {
       return NextResponse.json({ error: "缺少排期ID" }, { status: 400 });

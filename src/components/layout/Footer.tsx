@@ -8,7 +8,7 @@ export default function Footer() {
           <div>
             <h3 className="text-foreground font-bold mb-3">樱花动漫</h3>
             <p className="text-muted text-sm">
-              海量动漫资源在线观看，支持弹幕互动、多线路切换，给你最佳的追番体验。
+              海量动漫资源在线观看，支持多线路切换，给你最佳的追番体验。
             </p>
           </div>
           <div>

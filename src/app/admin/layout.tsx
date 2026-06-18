@@ -4,15 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Layout, Database, Users, MessageSquare, Calendar, Coffee, ArrowLeft, ShieldX, Menu, X } from "lucide-react";
+import { Layout, Database, Users, Calendar, Coffee, ArrowLeft, ShieldX, Menu, X, Image, MessageSquare, Bug, Megaphone } from "lucide-react";
 import Loading from "@/components/common/Loading";
 
 const navItems = [
   { href: "/admin", label: "仪表盘", icon: Layout },
   { href: "/admin/sources", label: "视频源管理", icon: Database },
   { href: "/admin/users", label: "用户管理", icon: Users },
-  { href: "/admin/danmaku", label: "弹幕管理", icon: MessageSquare },
+  { href: "/admin/bug-reports", label: "Bug 反馈", icon: Bug },
+  { href: "/admin/notifications", label: "公告管理", icon: Megaphone },
+  { href: "/admin/comments", label: "评论管理", icon: MessageSquare },
   { href: "/admin/schedule", label: "排期管理", icon: Calendar },
+  { href: "/admin/carousel", label: "轮播图管理", icon: Image },
   { href: "/admin/donate", label: "赞赏管理", icon: Coffee },
 ];
 

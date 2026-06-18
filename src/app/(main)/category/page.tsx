@@ -6,214 +6,225 @@ import Link from "next/link";
 import Image from "next/image";
 import Pagination from "@/components/common/Pagination";
 import Loading from "@/components/common/Loading";
-import { getAnimeCover } from "@/lib/utils";
-import { Star } from "lucide-react";
+import { Filter, RotateCcw, Star, Play, Search } from "lucide-react";
 
-interface AnimeItem {
-  vod_id: string | number;
+interface CatalogItem {
+  vod_id: string;
   vod_name: string;
   vod_pic: string;
   vod_remarks: string;
   vod_year: string;
+  vod_score: string;
   vod_area: string;
-  vod_class: string;
-  vod_score?: string;
   type_name: string;
 }
 
-const typeOptions = [
-  { label: "全部", value: "" },
-  { label: "日本动漫", value: "日本动漫" },
-  { label: "国产动漫", value: "国产动漫" },
-  { label: "动漫电影", value: "动漫电影" },
-  { label: "欧美动漫", value: "欧美动漫" },
-];
+const currentYear = new Date().getFullYear();
 
-const yearOptions = ["全部", "2026", "2025", "2024", "2023", "2022", "2021", "2020"];
+// 2000年 → 当前年份（最新的排前面）
+const yearOptions = Array.from({ length: currentYear - 1999 }, (_, i) => (currentYear - i).toString());
 
-const statusOptions = [
-  { label: "全部", value: "" },
-  { label: "连载中", value: "连载" },
-  { label: "已完结", value: "完结" },
+// 季度
+const quarterOptions = [
+  { label: "全部季度", value: "" },
+  { label: "1月番 (冬季)", value: "1" },
+  { label: "4月番 (春季)", value: "2" },
+  { label: "7月番 (夏季)", value: "3" },
+  { label: "10月番 (秋季)", value: "4" },
 ];
 
 const sortOptions = [
-  { label: "最新更新", value: "time" },
-  { label: "最多播放", value: "hits" },
+  { label: "最新更新", value: "updatedAt" },
   { label: "最高评分", value: "score" },
+  { label: "最新年份", value: "year" },
 ];
+
+const ITEMS_PER_PAGE = 48;
 
 function CatalogContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [animes, setAnimes] = useState<AnimeItem[]>([]);
+  const [animes, setAnimes] = useState<CatalogItem[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
-  const type = searchParams.get("type") || "";
   const year = searchParams.get("year") || "";
-  const status = searchParams.get("status") || "";
-  const sort = searchParams.get("sort") || "time";
+  const quarter = searchParams.get("quarter") || "";
+  const sort = searchParams.get("sort") || "updatedAt";
+  const q = searchParams.get("q") || "";
   const page = parseInt(searchParams.get("page") || "1");
+
+  // Sync search input with URL param
+  useEffect(() => { setSearchInput(q); }, [q]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: "48",
+        limit: String(ITEMS_PER_PAGE),
         sort,
-        detail: "1",
       });
-      if (type) params.set("type", type);
+      if (year) params.set("year", year);
+      if (quarter) params.set("quarter", quarter);
+      if (q) params.set("q", q);
 
-      const res = await fetch(`/api/anime?${params}`);
-      if (!res.ok) {
-        setError("加载失败，请稍后重试");
-        return;
-      }
-
+      const res = await fetch(`/api/catalog?${params}`);
+      if (!res.ok) return;
       const data = await res.json();
-      let list: AnimeItem[] = data.list || [];
+      setAnimes(data.list || []);
       setTotal(data.total || 0);
-
-      // 客户端筛选年份和状态
-      if (year) {
-        list = list.filter((item) => item.vod_year === year);
-      }
-      if (status) {
-        list = list.filter((item) => {
-          const r = item.vod_remarks || "";
-          if (status === "连载") return r.includes("更新") || r.includes("连载");
-          if (status === "完结") return r.includes("全集") || r.includes("完结") || r.includes("已完结");
-          return true;
-        });
-      }
-
-      setAnimes(list);
       setTotalPages(data.pagecount || 1);
-    } catch {
-      setError("网络请求失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [type, year, status, sort, page]);
+    } catch {} finally { setLoading(false); }
+  }, [year, quarter, sort, q, page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (!value || value === "全部") {
-      params.delete(key);
-    } else {
-      params.set(key, value);
-    }
-    params.delete("page");
+    if (!value) params.delete(key);
+    else params.set(key, value);
+    // 切换筛选条件时重置到第一页，改页码时不动
+    if (key !== "page") params.delete("page");
     router.push(`/category?${params}`);
   };
 
-  const FilterRow = ({ label, options, current, paramKey }: {
-    label: string;
-    options: { label: string; value: string }[];
-    current: string;
-    paramKey: string;
-  }) => (
-    <div className="flex items-start gap-3">
-      <span className="text-muted text-sm w-12 shrink-0 pt-1">{label}</span>
-      <div className="flex flex-wrap gap-2">
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => updateParam(paramKey, opt.value)}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              (current || "") === opt.value
-                ? "bg-primary text-white"
-                : "bg-accent/50 text-muted hover:text-primary"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateParam("q", searchInput.trim());
+  };
+
+  const hasFilters = year || quarter || q || sort !== "updatedAt";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">动漫目录</h1>
-        {!loading && <span className="text-sm text-muted">共 {total} 部</span>}
+    <div className="space-y-5">
+      {/* Header + Search */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-primary" />
+          <h1 className="text-xl font-bold text-foreground">动漫目录</h1>
+          {!loading && <span className="text-sm text-muted">共 {total.toLocaleString()} 部</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <form onSubmit={handleSearch} className="relative">
+            <input
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              placeholder="搜索动漫名称..."
+              className="w-44 h-9 pl-9 pr-3 rounded-lg bg-accent/50 border border-border text-sm focus:outline-none focus:border-primary placeholder:text-muted"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+          </form>
+          {hasFilters && (
+            <button onClick={() => router.push("/category")}
+              className="text-xs text-muted hover:text-primary flex items-center gap-1 transition-colors shrink-0">
+              <RotateCcw className="w-3 h-3" /> 重置
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* 筛选条件 */}
-      <div className="space-y-3 p-4 rounded-xl bg-card border border-border">
-        <FilterRow label="类型" options={typeOptions} current={type} paramKey="type" />
-        <FilterRow label="年份" options={yearOptions.map((y) => ({ label: y, value: y === "全部" ? "" : y }))} current={year} paramKey="year" />
-        <FilterRow label="状态" options={statusOptions} current={status} paramKey="status" />
-        <FilterRow label="排序" options={sortOptions} current={sort} paramKey="sort" />
+      {/* Filters */}
+      <div className="space-y-2.5 p-4 rounded-xl bg-card border border-border">
+        {/* 年份 + 季度（同一行） */}
+        <div className="flex items-start gap-3 flex-wrap">
+          <span className="text-muted text-sm w-12 shrink-0 pt-1 font-medium">年份</span>
+          <div className="flex flex-wrap gap-1.5">
+            <button onClick={() => updateParam("year", "")}
+              className={`px-3 py-1 rounded-full text-xs transition-all ${
+                !year ? "bg-primary text-white shadow-sm" : "bg-accent/50 text-muted hover:text-primary hover:bg-accent"
+              }`}>全部</button>
+            {yearOptions.map((y) => (
+              <button key={y} onClick={() => updateParam("year", y)}
+                className={`px-3 py-1 rounded-full text-xs transition-all ${
+                  year === y ? "bg-primary text-white shadow-sm" : "bg-accent/50 text-muted hover:text-primary hover:bg-accent"
+                }`}>{y}年</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 flex-wrap">
+          <span className="text-muted text-sm w-12 shrink-0 pt-1 font-medium">季度</span>
+          <div className="flex flex-wrap gap-1.5">
+            {quarterOptions.map((opt) => (
+              <button key={opt.value} onClick={() => updateParam("quarter", opt.value)}
+                className={`px-3 py-1 rounded-full text-xs transition-all ${
+                  quarter === opt.value ? "bg-primary text-white shadow-sm" : "bg-accent/50 text-muted hover:text-primary hover:bg-accent"
+                }`}>{opt.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* 排序 */}
+        <div className="flex items-start gap-3">
+          <span className="text-muted text-sm w-12 shrink-0 pt-1 font-medium">排序</span>
+          <div className="flex flex-wrap gap-1.5">
+            {sortOptions.map((opt) => (
+              <button key={opt.value} onClick={() => updateParam("sort", opt.value)}
+                className={`px-3 py-1 rounded-full text-xs transition-all ${
+                  sort === opt.value ? "bg-primary text-white shadow-sm" : "bg-accent/50 text-muted hover:text-primary hover:bg-accent"
+                }`}>{opt.label}</button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* 结果 */}
+      {/* Results */}
       {loading ? (
         <Loading />
-      ) : error ? (
-        <div className="text-center py-20 space-y-4">
-          <p className="text-red-400">{error}</p>
-          <button onClick={() => fetchData()} className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm">重试</button>
-        </div>
       ) : animes.length === 0 ? (
-        <div className="text-center py-20 text-muted">暂无结果</div>
+        <div className="text-center py-20 text-muted space-y-2">
+          <p>{q ? `搜索"${q}"未找到结果` : "暂无结果"}</p>
+          {hasFilters && (
+            <button onClick={() => router.push("/category")} className="text-primary text-sm hover:underline">清除筛选条件试试</button>
+          )}
+        </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
             {animes.map((anime) => {
               const hasImage = anime.vod_pic && (anime.vod_pic.startsWith("http://") || anime.vod_pic.startsWith("https://"));
               return (
-                <Link key={String(anime.vod_id)} href={`/anime/${anime.vod_id}`} className="group block">
+                <Link key={anime.vod_id} href={`/anime/play/${anime.vod_id}`} className="group block">
                   <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-card">
                     {hasImage ? (
-                      <Image
-                        src={anime.vod_pic}
-                        alt={anime.vod_name}
-                        fill
+                      <Image src={anime.vod_pic} alt={anime.vod_name} fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                        unoptimized
-                      />
+                        sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 12vw"
+                        unoptimized onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-pink-300 via-pink-200 to-rose-200 flex items-center justify-center p-4">
-                        <span className="text-pink-700 text-xl font-bold text-center line-clamp-3">{anime.vod_name}</span>
+                      <div className="w-full h-full bg-gradient-to-br from-pink-300 via-pink-200 to-rose-200 flex items-center justify-center p-2">
+                        <span className="text-pink-700 text-xs font-bold text-center line-clamp-3">{anime.vod_name}</span>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     {anime.vod_remarks && (
-                      <span className="absolute top-2 right-2 px-2 py-0.5 bg-primary text-white text-xs rounded">
-                        {anime.vod_remarks}
-                      </span>
+                      <span className="absolute top-1 right-1 px-1.5 py-0.5 bg-primary text-white text-[10px] rounded">{anime.vod_remarks}</span>
                     )}
                     {anime.vod_score && parseFloat(anime.vod_score) > 0 && (
-                      <span className="absolute top-2 left-2 flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-500/90 text-white text-xs rounded">
-                        <Star className="w-3 h-3" />
-                        {anime.vod_score}
+                      <span className="absolute top-1 left-1 flex items-center gap-0.5 px-1 py-0.5 bg-yellow-500/90 text-white text-[10px] rounded">
+                        <Star className="w-2.5 h-2.5" /> {anime.vod_score}
                       </span>
                     )}
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <h3 className="text-white text-sm font-medium line-clamp-2 drop-shadow-lg">
-                        {anime.vod_name}
-                      </h3>
-                      <p className="text-gray-300 text-xs mt-1">
-                        {[anime.vod_year, anime.type_name].filter(Boolean).join(" · ")}
-                      </p>
+                    {/* Play overlay - always visible on mobile, on hover on desktop */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <span className="w-10 h-10 rounded-full bg-primary/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg scale-75 group-hover:scale-100">
+                        <Play className="w-5 h-5 ml-0.5" />
+                      </span>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <h3 className="text-white text-xs font-medium line-clamp-2 drop-shadow-lg">{anime.vod_name}</h3>
+                      <p className="text-white/60 text-[10px]">{anime.vod_year} {anime.vod_area}</p>
                     </div>
                   </div>
                 </Link>
               );
             })}
           </div>
-          <Pagination current={page} total={totalPages} onChange={(p) => updateParam("page", p.toString())} />
+          {totalPages > 1 && (
+            <Pagination current={page} total={totalPages} onChange={(p) => updateParam("page", p.toString())} />
+          )}
         </>
       )}
     </div>

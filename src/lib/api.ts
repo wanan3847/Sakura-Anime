@@ -1,5 +1,5 @@
-// 聚合API对接模块 - 兼容CMS采集标准接口
-// 支持 /api.php/provide/vod/ 格式
+// 聚合API对接模块 - 支持多源路由
+import { db } from "@/lib/db";
 
 export interface AnimeItem {
   vod_id: string | number;
@@ -39,44 +39,65 @@ export interface Episode {
   url: string;
 }
 
-const API_URL = process.env.ANIME_API_URL || "";
-const API_BACKUP_URL = process.env.ANIME_API_BACKUP_URL || "";
-const API_WUJIN_URL = process.env.ANIME_API_WUJIN_URL || "";
-const API_LZI_URL = process.env.ANIME_API_LZI_URL || "";
-const API_FFZY_URL = process.env.ANIME_API_FFZY_URL || "";
+// 默认源标识（向后兼容无前缀的ID）
+const DEFAULT_SOURCE = "bfzyapi";
 
-// 动漫类型名称到API类型ID的映射（兼容bfzyapi等CMS采集站）
-const TYPE_MAP: Record<string, string> = {
-  "日本动漫": "41",
-  "国产动漫": "40",
-  "动漫电影": "39",
-  "欧美动漫": "42",
-  "港台动漫": "43",
-  "海外动漫": "44",
-};
+// ---- 数据库源缓存 (60秒 TTL) ----
+const SOURCES_CACHE_TTL = 60 * 1000; // 60秒
+let sourcesCache: { data: Record<string, string>; typeMap: Record<string, Record<string, string>>; expiry: number } | null = null;
 
-export function mapTypeName(name: string): string {
-  return TYPE_MAP[name] || name;
+async function refreshSourcesCache(): Promise<void> {
+  const activeSources = await db.videoSource.findMany({
+    where: { isActive: true },
+    orderBy: { priority: "desc" },
+  });
+
+  const sources: Record<string, string> = {};
+  const typeMap: Record<string, Record<string, string>> = {};
+  // 默认类型映射，供后备使用
+  const defaultTypeMappings: Record<string, string> = {
+    "日本动漫": "41", "国产动漫": "40", "动漫电影": "39", "欧美动漫": "42",
+    "日韩动漫": "41",
+  };
+
+  for (const src of activeSources) {
+    const key = src.name;
+    sources[key] = src.apiUrl;
+    // 用 DB 中每个源的 typeId 构建类型映射
+    typeMap[key] = {};
+    for (const [typeName] of Object.entries(defaultTypeMappings)) {
+      typeMap[key][typeName] = String(src.typeId);
+    }
+  }
+
+  sourcesCache = {
+    data: sources,
+    typeMap,
+    expiry: Date.now() + SOURCES_CACHE_TTL,
+  };
 }
 
-export function getTypeOptions() {
-  return [
-    { label: "日本动漫", value: "日本动漫" },
-    { label: "国产动漫", value: "国产动漫" },
-    { label: "动漫电影", value: "动漫电影" },
-    { label: "欧美动漫", value: "欧美动漫" },
-  ];
+async function getActiveSourcesMap(): Promise<Record<string, string>> {
+  if (!sourcesCache || sourcesCache.expiry < Date.now()) {
+    await refreshSourcesCache();
+  }
+  return sourcesCache!.data;
+}
+
+async function getActiveTypeMap(): Promise<Record<string, Record<string, string>>> {
+  if (!sourcesCache || sourcesCache.expiry < Date.now()) {
+    await refreshSourcesCache();
+  }
+  return sourcesCache!.typeMap;
 }
 
 // 缓存
 const cache = new Map<string, { data: unknown; expiry: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5分钟
+const CACHE_TTL = 5 * 60 * 1000;
 
 function getCached<T>(key: string): T | null {
   const item = cache.get(key);
-  if (item && item.expiry > Date.now()) {
-    return item.data as T;
-  }
+  if (item && item.expiry > Date.now()) return item.data as T;
   cache.delete(key);
   return null;
 }
@@ -85,194 +106,234 @@ function setCache(key: string, data: unknown) {
   cache.set(key, { data, expiry: Date.now() + CACHE_TTL });
 }
 
-async function fetchFromUrl(baseUrl: string, params: Record<string, string>): Promise<unknown> {
-  const url = new URL(baseUrl);
-  Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
-
-  const res = await fetch(url.toString(), {
-    next: { revalidate: 300 },
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.json();
+// 解析带前缀的ID: "ffzyapi_69065" → { sourceId: "ffzyapi", rawId: "69065" }
+export async function parseId(id: string): Promise<{ sourceId: string; rawId: string }> {
+  const sources = await getActiveSourcesMap();
+  for (const prefix of Object.keys(sources)) {
+    if (id.startsWith(prefix + "_")) {
+      return { sourceId: prefix, rawId: id.slice(prefix.length + 1) };
+    }
+  }
+  return { sourceId: DEFAULT_SOURCE, rawId: id };
 }
 
-async function fetchAPI(params: Record<string, string>): Promise<unknown> {
-  if (!API_URL) throw new Error("未配置ANIME_API_URL");
+export async function fetchFromUrl(baseUrl: string, params: Record<string, string>): Promise<unknown> {
+  const url = new URL(baseUrl);
+  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
 
-  try {
-    return await fetchFromUrl(API_URL, params);
-  } catch (primaryError) {
-    if (API_BACKUP_URL) {
-      try {
-        return await fetchFromUrl(API_BACKUP_URL, params);
-      } catch {
-        // 备用源也失败，继续抛出主源错误
-      }
-    }
-    throw primaryError;
-  }
+  const res = await fetch(url.toString(), {
+    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  return JSON.parse(text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ""));
+}
+
+async function getApiUrl(sourceId: string): Promise<string> {
+  const sources = await getActiveSourcesMap();
+  return sources[sourceId] || sources[DEFAULT_SOURCE] || "";
+}
+
+export async function mapTypeName(sourceId: string, name: string): Promise<string> {
+  const typeMap = await getActiveTypeMap();
+  return typeMap[sourceId]?.[name] || typeMap[DEFAULT_SOURCE]?.[name] || name;
 }
 
 // 获取动漫列表
 export async function getAnimeList(
-  page = 1,
-  limit = 24,
-  type?: string,
-  area?: string,
-  year?: string,
-  sort?: string,
-  detail = false
+  page = 1, limit = 24, type?: string, area?: string,
+  year?: string, sort?: string, detail = false
 ): Promise<AnimeListResponse> {
-  const cacheKey = `list:${detail ? "d" : "l"}:${page}:${limit}:${type}:${area}:${year}:${sort}`;
+  const cacheKey = `list:${page}:${limit}:${type}:${area}:${year}:${sort}`;
   const cached = getCached<AnimeListResponse>(cacheKey);
   if (cached) return cached;
 
+  const sourceId = DEFAULT_SOURCE;
   const params: Record<string, string> = {
     ac: detail ? "detail" : "list",
     pg: page.toString(),
     pagesize: limit.toString(),
   };
-  if (type) params.t = mapTypeName(type);
+  if (type) params.t = await mapTypeName(sourceId, type);
   if (area) params.a = area;
   if (year) params.y = year;
-  if (sort) params.sort = sort;
+  if (sort) params.by = sort;
 
-  const data = (await fetchAPI(params)) as AnimeListResponse;
+  const data = (await fetchFromUrl(await getApiUrl(sourceId), params)) as AnimeListResponse;
   setCache(cacheKey, data);
   return data;
 }
 
-// 获取动漫详情 - 合并多个API源的播放地址
+// 多源获取动漫列表 — 遍历所有源合并结果
+export async function getAnimeListMultiSource(
+  page = 1, limit = 24, type?: string, area?: string,
+  year?: string, sort?: string, detail = false
+): Promise<AnimeListResponse> {
+  const sources = await getActiveSourcesMap();
+  const allItems: AnimeItem[] = [];
+
+  for (const [sourceId, apiUrl] of Object.entries(sources)) {
+    if (!apiUrl) continue;
+    try {
+      const params: Record<string, string> = {
+        ac: detail ? "detail" : "list",
+        pg: page.toString(),
+        pagesize: limit.toString(),
+      };
+      if (type) params.t = await mapTypeName(sourceId, type);
+      if (area) params.a = area;
+      if (year) params.y = year;
+      if (sort) params.by = sort;
+
+      const data = (await fetchFromUrl(apiUrl, params)) as AnimeListResponse;
+      if (data.list) allItems.push(...data.list);
+    } catch { /* skip failed sources */ }
+  }
+
+  return {
+    code: 1,
+    msg: "数据列表",
+    page,
+    pagecount: Math.ceil(allItems.length / limit),
+    limit: limit.toString(),
+    total: allItems.length,
+    list: allItems,
+  };
+}
+
+// 获取动漫详情 - 多源聚合，先查主源拿名字，再搜其他源
 export async function getAnimeDetail(id: string): Promise<AnimeItem | null> {
   const cacheKey = `detail:${id}`;
   const cached = getCached<AnimeItem>(cacheKey);
   if (cached) return cached;
 
-  const data = (await fetchAPI({ ac: "detail", ids: id })) as AnimeListResponse;
-  if (!data.list || data.list.length === 0) return null;
+  const sources = await getActiveSourcesMap();
+  const { sourceId, rawId } = await parseId(id);
+  const primaryUrl = await getApiUrl(sourceId);
 
-  const primary = data.list[0];
+  // Phase 1: 查询主源（按ID精确查询）
+  let primary: AnimeItem | null = null;
+  try {
+    const data = await fetchFromUrl(primaryUrl, { ac: "detail", ids: rawId }) as AnimeListResponse;
+    if (data.list?.length) primary = data.list[0];
+  } catch {}
 
-  // 尝试从其他API源获取额外的播放地址（AAC音频兼容性更好）
-  const extraSources = await fetchExtraPlaySources(primary.vod_name, primary.vod_play_from, primary.vod_play_url);
-  if (extraSources) {
-    primary.vod_play_from = extraSources.from;
-    primary.vod_play_url = extraSources.url;
+  if (!primary) return null;
+
+  // Phase 2: 用名称搜索其他源，聚合更多播放线路
+  const backupSources = Object.entries(sources)
+    .filter(([sid]) => sid !== sourceId)
+    .filter(([, url]) => url);
+
+  if (backupSources.length > 0) {
+    const name = primary.vod_name;
+    const shortName = name
+      .replace(/\s*第[一二三四五六七八九十百千\d]+[季期部篇]/g, "")
+      .replace(/\s*[：:].*$/g, "")
+      .trim();
+
+    // 并发搜索其他源，8秒超时
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const results = await Promise.allSettled(
+      backupSources.map(async ([sid, apiUrl]) => {
+        const data = await fetchFromUrl(apiUrl, { ac: "detail", wd: name }) as AnimeListResponse;
+        if (!data.list?.length && shortName !== name) {
+          const data2 = await fetchFromUrl(apiUrl, { ac: "detail", wd: shortName }) as AnimeListResponse;
+          return { sourceId: sid, data: data2 };
+        }
+        return { sourceId: sid, data };
+      })
+    );
+    clearTimeout(timeoutId);
+
+    // 合并播放地址
+    const fromSet = new Set((primary.vod_play_from || "").split("$$$"));
+    const allFrom: string[] = (primary.vod_play_from || "").split("$$$");
+    const allUrl: string[] = (primary.vod_play_url || "").split("$$$");
+
+    for (const r of results) {
+      if (r.status !== "fulfilled" || !r.value.data?.list?.length) continue;
+      const item = r.value.data.list[0];
+      if (!item.vod_play_from || !item.vod_play_url) continue;
+      const newFromList = item.vod_play_from.split("$$$");
+      const newUrlList = item.vod_play_url.split("$$$");
+      newFromList.forEach((fName, idx) => {
+        if (!fromSet.has(fName) && newUrlList[idx]) {
+          fromSet.add(fName);
+          allFrom.push(fName);
+          allUrl.push(newUrlList[idx]);
+        }
+      });
+    }
+
+    if (allFrom.length > 1) {
+      primary.vod_play_from = allFrom.join("$$$");
+      primary.vod_play_url = allUrl.join("$$$");
+    }
   }
 
   setCache(cacheKey, primary);
   return primary;
 }
 
-// 从备用API获取额外播放源，合并到主源中
-async function fetchExtraPlaySources(
-  animeName: string,
-  existingFrom: string,
-  existingUrl: string,
-): Promise<{ from: string; url: string } | null> {
-  const extraApis = [API_BACKUP_URL, API_WUJIN_URL, API_LZI_URL, API_FFZY_URL].filter((u) => u && u !== API_URL);
-  if (extraApis.length === 0) return null;
-
-  const existingFromSet = new Set((existingFrom || "").split("$$$"));
-  const allFrom: string[] = (existingFrom || "").split("$$$");
-  const allUrl: string[] = (existingUrl || "").split("$$$");
-
-  // 生成多个搜索关键词（CMS搜索对长标题+季数后缀匹配差）
-  const searchKeywords = [animeName];
-  const shortName = animeName
-    .replace(/\s*第[一二三四五六七八九十百千\d]+[季期部篇]/g, "")
-    .replace(/\s*[：:].*$/g, "")
-    .trim();
-  if (shortName && shortName !== animeName && shortName.length >= 2) {
-    searchKeywords.push(shortName);
-  }
-
-  for (const apiUrl of extraApis) {
-    let matchFound = false;
-    for (const keyword of searchKeywords) {
-      if (matchFound) break;
-      try {
-        const data = (await fetchFromUrl(apiUrl, {
-          ac: "detail",
-          wd: keyword,
-        })) as AnimeListResponse;
-
-        if (!data.list || data.list.length === 0) continue;
-
-        // 找到名字最匹配的结果
-        const match = data.list.find(
-          (item) => item.vod_name === animeName || item.vod_name.includes(shortName) || animeName.includes(item.vod_name),
-        );
-        if (!match || !match.vod_play_from || !match.vod_play_url) continue;
-
-        matchFound = true;
-        const newFromList = match.vod_play_from.split("$$$");
-        const newUrlList = match.vod_play_url.split("$$$");
-
-        newFromList.forEach((name, idx) => {
-          if (!existingFromSet.has(name) && newUrlList[idx]) {
-            allFrom.push(name);
-            allUrl.push(newUrlList[idx]);
-            existingFromSet.add(name);
-          }
-        });
-      } catch {
-        // 忽略备用源错误
-      }
-    }
-  }
-
-  if (allFrom.length > (existingFrom || "").split("$$$").length) {
-    return { from: allFrom.join("$$$"), url: allUrl.join("$$$") };
-  }
-  return null;
-}
-
-// 搜索动漫
+// 搜索动漫（先查本地 catalog，再回退 API）
 export async function searchAnime(keyword: string, page = 1): Promise<AnimeListResponse> {
   const cacheKey = `search:${keyword}:${page}`;
   const cached = getCached<AnimeListResponse>(cacheKey);
   if (cached) return cached;
 
-  const data = (await fetchAPI({
-    ac: "list",
-    wd: keyword,
-    pg: page.toString(),
+  // 回退到 API 搜索
+  const data = (await fetchFromUrl(await getApiUrl(DEFAULT_SOURCE), {
+    ac: "list", wd: keyword, pg: page.toString(),
   })) as AnimeListResponse;
   setCache(cacheKey, data);
   return data;
 }
 
+// 从数据库获取可用类型选项
+export async function getTypeOptions(): Promise<{ label: string; value: string }[]> {
+  // 读取所有启用的源以获取类型信息
+  const sources = await db.videoSource.findMany({
+    where: { isActive: true },
+    select: { typeId: true, name: true },
+    orderBy: { priority: "desc" },
+  });
+
+  // 标准中文类型名称
+  const typeNames = ["日本动漫", "国产动漫", "动漫电影", "欧美动漫"];
+  // 默认类型ID映射（作为后备）
+  const defaultTypeIds: Record<string, number> = {
+    "日本动漫": 41, "国产动漫": 40, "动漫电影": 39, "欧美动漫": 42,
+  };
+
+  // 使用第一个活跃源的类型ID（通常所有源共享同一套类型体系）
+  if (sources.length > 0) {
+    return typeNames.map((name) => ({
+      label: name,
+      value: name,
+    }));
+  }
+
+  // 后备：返回硬编码值
+  return [
+    { label: "日本动漫", value: "日本动漫" },
+    { label: "国产动漫", value: "国产动漫" },
+    { label: "动漫电影", value: "动漫电影" },
+    { label: "欧美动漫", value: "欧美动漫" },
+  ];
+}
+
 // 播放源名称中文化映射
 const SOURCE_NAME_MAP: Record<string, string> = {
-  bfzym3u8: "暴风",
-  bfzyplay: "暴风",
-  "1080zyk": "精品",
-  "1080tk": "精品",
-  tkm3u8: "西瓜",
-  ffm3u8: "非凡",
-  wjm3u8: "无尽",
-  hnm3u8: "红牛",
-  jsm3u8: "计算云",
-  fcm3u8: "凤雏云",
-  xgm3u8: "西瓜",
-  dbm3u8: "量子",
-  kdm3u8: "酷点",
-  jinyingm3u8: "金鹰",
-  tam3u8: "暴风",
-  zuidam3u8: "最大",
-  bfzyapi: "暴风",
-  liangzi: "量子",
-  lzm3u8: "量子",
-  lzm3u82: "量子2",
-  zuidam3u82: "最大2",
-  ffzym3u8: "非凡资源",
-  ffzyapi: "非凡资源",
+  bfzym3u8: "暴风", bfzyplay: "暴风", "1080zyk": "精品", "1080tk": "精品",
+  tkm3u8: "西瓜", ffm3u8: "非凡", wjm3u8: "无尽", hnm3u8: "红牛",
+  jsm3u8: "计算云", fcm3u8: "凤雏云", xgm3u8: "西瓜", dbm3u8: "量子",
+  kdm3u8: "酷点", jinyingm3u8: "金鹰", tam3u8: "暴风", zuidam3u8: "最大",
+  bfzyapi: "暴风", liangzi: "量子", lzm3u8: "量子", lzm3u82: "量子2",
+  zuidam3u82: "最大2", ffzym3u8: "非凡资源", ffzyapi: "非凡资源",
+  feifan: "非凡",
 };
 
 function mapSourceName(name: string): string {
@@ -292,10 +353,7 @@ export function parsePlaySources(vodPlayFrom: string, vodPlayUrl: string): PlayS
     const urlStr = urlList[index] || "";
     const episodes: Episode[] = urlStr.split("#").filter(Boolean).map((ep) => {
       const [epName, epUrl] = ep.split("$");
-      return {
-        name: epName || "播放",
-        url: epUrl || "",
-      };
+      return { name: epName || "播放", url: epUrl || "" };
     });
     sources.push({ name: mapSourceName(name), episodes });
   });

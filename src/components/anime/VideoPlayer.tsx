@@ -10,31 +10,6 @@ interface VideoPlayerProps {
   onError?: () => void;
 }
 
-// 自定义弹幕后端，覆盖 DPlayer 默认的 v3/ 路径
-const danmakuBackend = {
-  read: (opt: { url: string; success: (data: unknown) => void; error: (msg?: string) => void }) => {
-    fetch(opt.url)
-      .then((res) => res.json())
-      .then((data) => {
-        const items = (data.data || []).map((d: unknown[]) => ({
-          time: d[0], type: d[1], color: d[2], author: d[3], text: d[4],
-        }));
-        opt.success(items);
-      })
-      .catch(() => opt.error());
-  },
-  send: (opt: { url: string; data: Record<string, unknown>; success: () => void; error: (msg?: string) => void }) => {
-    fetch(opt.url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(opt.data),
-    })
-      .then((res) => res.json())
-      .then(() => opt.success())
-      .catch(() => opt.error());
-  },
-};
-
 export default function VideoPlayer({ url, animeId, episodeId, onTimeUpdate, onError }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dpRef = useRef<unknown>(null);
@@ -137,10 +112,6 @@ export default function VideoPlayer({ url, animeId, episodeId, onTimeUpdate, onE
         theme: "#ff69b4",
         screenshot: true,
         hotkey: true,
-        danmaku: {
-          id: `${animeId}_${episodeId}`,
-          api: "/api/danmaku",
-        },
         video: {
           url: proxyUrl,
           type: isHls ? "customHls" : "auto",

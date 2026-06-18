@@ -9,14 +9,14 @@ export async function GET() {
       return NextResponse.json({ error: "无权限" }, { status: 403 });
     }
 
-    const [users, sources, danmakus, favorites] = await Promise.all([
+    const [users, sources, favorites, bugReports] = await Promise.all([
       db.user.count(),
       db.videoSource.count(),
-      db.danmaku.count(),
       db.favorite.count(),
+      db.comment.count({ where: { animeId: "bug-report" } }),
     ]);
 
-    return NextResponse.json({ users, sources, danmakus, favorites });
+    return NextResponse.json({ users, sources, favorites, bugReports });
   } catch {
     return NextResponse.json({ error: "获取统计数据失败" }, { status: 500 });
   }

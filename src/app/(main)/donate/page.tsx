@@ -29,17 +29,17 @@ export default function DonatePage() {
       <div className="text-center space-y-4">
         <Coffee className="w-16 h-16 text-primary mx-auto" />
         <h1 className="text-2xl font-bold text-foreground">赞赏咖啡</h1>
-        <p className="text-muted">如果觉得本站好用，请作者喝杯咖啡</p>
+        <p className="text-muted">所有赞赏将用于服务器租赁，感谢您的支持 ❤</p>
       </div>
 
       {images.length > 0 ? (
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-6 max-w-xl mx-auto">
           {images.map((img) => (
-            <div key={img.id} className="p-6 rounded-xl bg-card border border-border text-center space-y-3">
+            <div key={img.id} className="p-4 sm:p-6 rounded-xl bg-card border border-border text-center space-y-3">
               <img
                 src={img.url}
                 alt={img.caption || "赞赏"}
-                className="max-w-xs mx-auto rounded-lg"
+                className="w-full aspect-square object-contain rounded-lg"
               />
               {img.caption && (
                 <p className="text-sm text-muted">{img.caption}</p>

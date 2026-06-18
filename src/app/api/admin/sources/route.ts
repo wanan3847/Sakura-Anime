@@ -33,10 +33,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, apiUrl, isActive, priority } = body;
+    const { name, apiUrl, isActive, priority, typeId } = body;
 
     const source = await db.videoSource.create({
-      data: { name, apiUrl, isActive, priority },
+      data: { name, apiUrl, isActive, priority, typeId },
     });
 
     return NextResponse.json(source);
@@ -54,7 +54,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, apiUrl, priority } = body;
+    const { id, name, apiUrl, priority, typeId } = body;
 
     if (!id) {
       return NextResponse.json({ error: "缺少视频源ID" }, { status: 400 });
@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest) {
 
     const source = await db.videoSource.update({
       where: { id },
-      data: { name, apiUrl, priority },
+      data: { name, apiUrl, priority, typeId },
     });
 
     return NextResponse.json(source);

@@ -10,15 +10,16 @@ interface VideoSource {
   apiUrl: string;
   isActive: boolean;
   priority: number;
+  typeId: number;
 }
 
 export default function SourcesPage() {
   const [sources, setSources] = useState<VideoSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", apiUrl: "", priority: 0 });
+  const [form, setForm] = useState({ name: "", apiUrl: "", priority: 0, typeId: 41 });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", apiUrl: "", priority: 0 });
+  const [editForm, setEditForm] = useState({ name: "", apiUrl: "", priority: 0, typeId: 41 });
   const [error, setError] = useState("");
 
   const fetchSources = async () => {
@@ -48,7 +49,7 @@ export default function SourcesPage() {
         const source = await res.json();
         setSources((prev) => [...prev, source]);
         setShowForm(false);
-        setForm({ name: "", apiUrl: "", priority: 0 });
+        setForm({ name: "", apiUrl: "", priority: 0, typeId: 41 });
       } else {
         const data = await res.json();
         setError(data.error || "添加失败");
@@ -86,7 +87,7 @@ export default function SourcesPage() {
 
   const startEdit = (source: VideoSource) => {
     setEditingId(source.id);
-    setEditForm({ name: source.name, apiUrl: source.apiUrl, priority: source.priority });
+    setEditForm({ name: source.name, apiUrl: source.apiUrl, priority: source.priority, typeId: source.typeId });
   };
 
   const handleSave = async () => {
@@ -130,7 +131,7 @@ export default function SourcesPage() {
 
       {showForm && (
         <div className="p-4 rounded-xl bg-card border border-border space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <input
               type="text"
               value={form.name}
@@ -150,6 +151,13 @@ export default function SourcesPage() {
               value={form.priority}
               onChange={(e) => setForm({ ...form, priority: parseInt(e.target.value) || 0 })}
               placeholder="优先级"
+              className="h-10 px-4 rounded-lg bg-accent/50 border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary"
+            />
+            <input
+              type="number"
+              value={form.typeId}
+              onChange={(e) => setForm({ ...form, typeId: parseInt(e.target.value) || 41 })}
+              placeholder="类型ID (日本动漫=41)"
               className="h-10 px-4 rounded-lg bg-accent/50 border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary"
             />
           </div>
@@ -201,6 +209,12 @@ export default function SourcesPage() {
                     onChange={(e) => setEditForm({ ...editForm, priority: parseInt(e.target.value) || 0 })}
                     className="h-8 px-3 rounded bg-accent/50 border border-border text-sm text-foreground focus:outline-none focus:border-primary w-20"
                   />
+                  <input
+                    type="number"
+                    value={editForm.typeId}
+                    onChange={(e) => setEditForm({ ...editForm, typeId: parseInt(e.target.value) || 41 })}
+                    className="h-8 px-3 rounded bg-accent/50 border border-border text-sm text-foreground focus:outline-none focus:border-primary w-20"
+                  />
                   <button onClick={handleSave} className="p-1.5 text-green-400 hover:text-green-300">
                     <Save className="w-4 h-4" />
                   </button>
@@ -215,6 +229,7 @@ export default function SourcesPage() {
                     <p className="text-muted text-xs truncate">{source.apiUrl}</p>
                   </div>
                   <span className="text-muted text-xs shrink-0">优先级: {source.priority}</span>
+                  <span className="text-muted text-xs shrink-0">类型ID: {source.typeId}</span>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => startEdit(source)} className="p-2 text-muted hover:text-primary transition-colors">
                       <Edit className="w-4 h-4" />

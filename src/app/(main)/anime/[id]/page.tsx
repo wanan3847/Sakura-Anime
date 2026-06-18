@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, Play, Clock, Star } from "lucide-react";
 import EpisodeList from "@/components/anime/EpisodeList";
+import CommentSection from "@/components/anime/CommentSection";
 import AnimeGrid from "@/components/anime/AnimeGrid";
 import Loading from "@/components/common/Loading";
 import { getAnimeCover } from "@/lib/utils";
@@ -175,6 +176,9 @@ export default function AnimeDetailPage() {
         </h2>
         <AnimeGrid animes={[]} />
       </section>
+
+      {/* 评论区 */}
+      <CommentSection animeId={String(params.id)} />
     </div>
   );
 }

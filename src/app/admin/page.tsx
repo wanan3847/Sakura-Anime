@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Database, MessageSquare, TrendingUp } from "lucide-react";
+import { Users, Database, TrendingUp, Bug } from "lucide-react";
 
 interface Stats {
   users: number;
   sources: number;
-  danmakus: number;
   favorites: number;
+  bugReports: number;
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<Stats>({ users: 0, sources: 0, danmakus: 0, favorites: 0 });
+  const [stats, setStats] = useState<Stats>({ users: 0, sources: 0, favorites: 0, bugReports: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,8 +28,8 @@ export default function AdminDashboard() {
   const cards = [
     { label: "注册用户", value: stats.users, icon: Users, color: "text-blue-400" },
     { label: "视频源", value: stats.sources, icon: Database, color: "text-green-400" },
-    { label: "弹幕总数", value: stats.danmakus, icon: MessageSquare, color: "text-yellow-400" },
     { label: "收藏总数", value: stats.favorites, icon: TrendingUp, color: "text-pink-400" },
+    { label: "Bug 反馈", value: stats.bugReports, icon: Bug, color: "text-red-400", link: "/admin/bug-reports" },
   ];
 
   if (loading) {
@@ -53,18 +53,23 @@ export default function AdminDashboard() {
       <h1 className="text-2xl font-bold text-foreground">管理仪表盘</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {cards.map((card) => (
-          <div
-            key={card.label}
-            className="p-5 rounded-xl bg-card border border-border"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-muted text-sm">{card.label}</span>
-              <card.icon className={`w-6 h-6 ${card.color}`} />
-            </div>
-            <p className="text-3xl font-bold text-foreground">{card.value.toLocaleString()}</p>
-          </div>
-        ))}
+        {cards.map((card) => {
+          const Tag = card.link ? "a" : "div";
+          const linkProps = card.link ? { href: card.link } : {};
+          return (
+            <Tag
+              key={card.label}
+              {...linkProps}
+              className={`p-5 rounded-xl bg-card border border-border ${card.link ? "hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer" : ""}`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-muted text-sm">{card.label}</span>
+                <card.icon className={`w-6 h-6 ${card.color}`} />
+              </div>
+              <p className="text-3xl font-bold text-foreground">{card.value.toLocaleString()}</p>
+            </Tag>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -94,9 +99,6 @@ export default function AdminDashboard() {
             </a>
             <a href="/admin/users" className="block p-3 rounded-lg bg-accent/30 hover:bg-accent/50 text-foreground text-sm transition-colors">
               管理用户
-            </a>
-            <a href="/admin/danmaku" className="block p-3 rounded-lg bg-accent/30 hover:bg-accent/50 text-foreground text-sm transition-colors">
-              审核弹幕
             </a>
           </div>
         </div>

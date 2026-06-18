@@ -55,9 +55,23 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // 根据URL自动选择 Referer — 不同 CDN 需要不同的防盗链来源
+    let referer = "https://bfzyapi.com/";
+    try {
+      const hostname = new URL(url).hostname;
+      const subdomain = hostname.split(".").slice(-2, -1)[0] || "";
+      if (hostname.includes("ffzy") || hostname.includes("feifan")) {
+        referer = "https://www.ffzyapi.com/";
+      } else if (hostname.includes("zuidazi") || subdomain.includes("zuid")) {
+        referer = "https://www.zuidapi.com/";
+      } else if (hostname.includes("wujin")) {
+        referer = "https://www.wujinapi.com/";
+      }
+    } catch { /* use default */ }
+
     const res = await fetch(url, {
       headers: {
-        Referer: "https://bfzyapi.com/",
+        Referer: referer,
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
       signal: AbortSignal.timeout(15000),

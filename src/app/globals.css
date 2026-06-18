@@ -24,8 +24,8 @@
   --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-border: var(--border);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Segoe UI Mono", monospace;
 }
 
 body {
@@ -60,9 +60,4 @@ body {
 /* 选中高亮 */
 ::selection {
   background: rgba(255, 105, 180, 0.3);
-}
-
-/* DPlayer 弹幕样式 */
-.dplayer-danmaku {
-  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
 }
