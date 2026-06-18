@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn, useSession, signOut } from "next-auth/react";
-import { User, Mail, Lock, LogOut } from "lucide-react";
+import { User, Mail, Lock, LogOut, Save, Eye, EyeOff } from "lucide-react";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -12,6 +12,41 @@ export default function ProfilePage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oldPwd, setOldPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState("");
+  const [pwdOk, setPwdOk] = useState(false);
+  const [pwdLoading, setPwdLoading] = useState(false);
+
+  const handleChangePwd = async () => {
+    if (!oldPwd || !newPwd || newPwd.length < 6) return;
+    setPwdLoading(true);
+    setPwdMsg("");
+    try {
+      const res = await fetch("/api/auth/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: oldPwd, newPassword: newPwd }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPwdOk(true);
+        setPwdMsg("密码修改成功");
+        setOldPwd("");
+        setNewPwd("");
+      } else {
+        setPwdOk(false);
+        setPwdMsg(data.error || "修改失败");
+      }
+    } catch {
+      setPwdOk(false);
+      setPwdMsg("网络错误");
+    } finally {
+      setPwdLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +129,55 @@ export default function ProfilePage() {
               }`}>
                 {user.role === "admin" ? "管理员" : "普通用户"}
               </span>
+            </div>
+          </div>
+
+          {/* 修改密码 */}
+          <div className="border-t border-border pt-4 mt-4">
+            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <Lock className="w-4 h-4 text-primary" />
+              修改密码
+            </h3>
+            <div className="space-y-3">
+              <div className="relative">
+                <input
+                  type={showOld ? "text" : "password"}
+                  value={oldPwd}
+                  onChange={(e) => setOldPwd(e.target.value)}
+                  placeholder="当前密码"
+                  className="w-full h-10 pl-9 pr-10 rounded-lg bg-accent/50 border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary"
+                />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <button type="button" onClick={() => setShowOld(!showOld)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground">
+                  {showOld ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showNew ? "text" : "password"}
+                  value={newPwd}
+                  onChange={(e) => setNewPwd(e.target.value)}
+                  placeholder="新密码（至少6位）"
+                  className="w-full h-10 pl-9 pr-10 rounded-lg bg-accent/50 border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary"
+                />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <button type="button" onClick={() => setShowNew(!showNew)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground">
+                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {pwdMsg && (
+                <div className={`text-xs ${pwdOk ? "text-green-400" : "text-red-400"}`}>{pwdMsg}</div>
+              )}
+              <button
+                onClick={handleChangePwd}
+                disabled={pwdLoading || !oldPwd || !newPwd || newPwd.length < 6}
+                className="w-full h-9 bg-card hover:bg-card-hover border border-border text-foreground rounded-lg transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {pwdLoading ? "修改中..." : "保存新密码"}
+              </button>
             </div>
           </div>
 
