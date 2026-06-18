@@ -75,7 +75,7 @@ npm install
 ```env
 DATABASE_URL="file:./prisma/dev.db"
 NEXTAUTH_SECRET="your-secret-key"
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:3001"
 
 # CMS 采集源（至少配置一个）
 ANIME_API_URL="https://bfzyapi.com/api.php/provide/vod/"
@@ -107,8 +107,8 @@ npm run dev -- --webpack
 # 或直接 npm run dev（如果配置了默认）
 ```
 
-访问 http://localhost:3000
-管理后台: http://localhost:3000/admin
+访问 http://localhost:3001
+管理后台: http://localhost:3001/admin
 默认管理员: `admin@sakura-anime.com` / `admin123456`
 
 ### 初始化/同步数据库
@@ -116,7 +116,7 @@ npm run dev -- --webpack
 ```bash
 npx prisma db push        # 同步 schema 到数据库
 # 爬取日本动漫数据（首次需要）
-curl -X POST http://localhost:3000/api/admin/crawl \
+curl -X POST http://localhost:3001/api/admin/crawl \
   -H "Content-Type: application/json" \
   -d '{"key":"$CRAWL_API_KEY"}'
 ```

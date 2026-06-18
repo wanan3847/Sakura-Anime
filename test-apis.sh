@@ -2,7 +2,7 @@
 cd /Users/yangyazhou/Sakura-Anime-main
 
 # Start server
-npx next dev -p 3000 > /tmp/next-dev.log 2>&1 &
+npx next dev -p 3001 > /tmp/next-dev.log 2>&1 &
 NPID=$!
 
 # Wait for ready
@@ -21,16 +21,16 @@ cat /tmp/next-dev.log
 sleep 3
 echo ""
 echo "=== CAROUSEL ==="
-curl -s --max-time 10 http://localhost:3000/api/carousel 2>&1
+curl -s --max-time 10 http://localhost:3001/api/carousel 2>&1
 echo ""
 echo "=== COMMENTS ==="
-curl -s --max-time 10 'http://localhost:3000/api/comments?animeId=test' 2>&1
+curl -s --max-time 10 'http://localhost:3001/api/comments?animeId=test' 2>&1
 echo ""
 echo "=== SCHEDULE ==="
-curl -s --max-time 10 http://localhost:3000/api/schedule 2>&1
+curl -s --max-time 10 http://localhost:3001/api/schedule 2>&1
 echo ""
 echo "=== ANIME ==="
-curl -s --max-time 15 'http://localhost:3000/api/anime?page=1&limit=2' 2>&1
+curl -s --max-time 15 'http://localhost:3001/api/anime?page=1&limit=2' 2>&1
 echo ""
 echo "=== DONE ==="
 kill $NPID 2>/dev/null

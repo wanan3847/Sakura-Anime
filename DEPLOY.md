@@ -157,7 +157,7 @@ node .next/standalone/server.js &
 sleep 5
 
 # 执行全量爬取
-curl -X POST http://localhost:3000/api/admin/crawl \
+curl -X POST http://localhost:3001/api/admin/crawl \
   -H "Content-Type: application/json" \
   -d '{"key":"'"$CRAWL_API_KEY"'"}'
 
@@ -221,7 +221,7 @@ server {
     client_max_body_size 50M;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -238,13 +238,13 @@ server {
 
     # 静态资源缓存
     location /_next/static {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         expires 365d;
         add_header Cache-Control "public, immutable";
     }
 
     location /uploads {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         expires 30d;
     }
 }
@@ -356,7 +356,7 @@ pm2 restart sakura-anime
 ```
 名称: Sakura Anime 每日同步
 定时: 0 5 * * *
-执行: curl -X POST http://localhost:3000/api/admin/crawl?quick=true -H "Content-Type: application/json" -d '{"key":"$CRAWL_API_KEY"}'
+执行: curl -X POST http://localhost:3001/api/admin/crawl?quick=true -H "Content-Type: application/json" -d '{"key":"$CRAWL_API_KEY"}'
 ```
 
 ### 8.2 Linux Cron（不依赖 Hermes）
@@ -366,7 +366,7 @@ pm2 restart sakura-anime
 ```bash
 crontab -e
 # 添加：
-0 5 * * * curl -s -X POST http://localhost:3000/api/admin/crawl?quick=true -H "Content-Type: application/json" -d '{"key":"$CRAWL_API_KEY"}' >> /var/log/sakura-crawl.log 2>&1
+0 5 * * * curl -s -X POST http://localhost:3001/api/admin/crawl?quick=true -H "Content-Type: application/json" -d '{"key":"$CRAWL_API_KEY"}' >> /var/log/sakura-crawl.log 2>&1
 ```
 
 ---
