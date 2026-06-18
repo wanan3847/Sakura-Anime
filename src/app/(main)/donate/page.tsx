@@ -2,8 +2,8 @@ import { Coffee } from "lucide-react";
 import Image from "next/image";
 
 const donateImages = [
-  { src: "/images/donate/donate-wechat.jpeg", alt: "微信赞赏" },
-  { src: "/images/donate/donate-alipay.jpeg", alt: "支付宝赞赏" },
+  { src: "/images/donate/donate-wechat.jpeg", alt: "支付宝赞赏" },
+  { src: "/images/donate/donate-alipay.jpeg", alt: "微信赞赏" },
 ];
 
 export default function DonatePage() {
