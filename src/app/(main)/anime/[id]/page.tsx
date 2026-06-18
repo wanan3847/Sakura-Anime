@@ -10,8 +10,8 @@ import CommentSection from "@/components/anime/CommentSection";
 import AnimeGrid from "@/components/anime/AnimeGrid";
 import Loading from "@/components/common/Loading";
 import { getAnimeCover } from "@/lib/utils";
-import { parsePlaySources } from "@/lib/api";
-import type { PlaySource, Episode } from "@/lib/api";
+import { parsePlaySources } from "@/lib/play-source";
+import type { PlaySource, Episode } from "@/lib/play-source";
 
 interface AnimeDetail {
   vod_id: string | number;
