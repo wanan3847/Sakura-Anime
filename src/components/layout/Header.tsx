@@ -137,7 +137,7 @@ export default function Header() {
           </nav>
 
           {/* 搜索框 */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4">
+          <form onSubmit={handleSearch} className="flex-1 max-w-[140px] sm:max-w-xs md:max-w-sm lg:max-w-md mx-2 sm:mx-4">
             <div className="relative">
               <input
                 type="text"
@@ -156,16 +156,16 @@ export default function Header() {
               <>
                 <Link href="/user/favorites" className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm">
                   <Heart className="w-4 h-4" />
-                  <span className="hidden lg:inline text-sm">收藏</span>
+                  <span className="hidden md:inline text-sm">收藏</span>
                 </Link>
                 <Link href="/user/history" className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm">
                   <Clock className="w-4 h-4" />
-                  <span className="hidden lg:inline text-sm">历史</span>
+                  <span className="hidden md:inline text-sm">历史</span>
                 </Link>
                 {isAdmin && (
                   <Link href="/admin" className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm">
                     <Shield className="w-4 h-4" />
-                    <span className="hidden lg:inline text-sm">管理</span>
+                    <span className="hidden md:inline text-sm">管理</span>
                   </Link>
                 )}
                 <Link
@@ -253,11 +253,11 @@ export default function Header() {
               <>
                 <Link href="/feedback" className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm">
                   <Bug className="w-4 h-4" />
-                  <span className="hidden lg:inline text-sm">反馈</span>
+                  <span className="hidden md:inline text-sm">反馈</span>
                 </Link>
                 <Link href="/donate" className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm">
                   <Coffee className="w-4 h-4" />
-                  <span className="hidden lg:inline text-sm">赞赏</span>
+                  <span className="hidden md:inline text-sm">赞赏</span>
                 </Link>
                 <Link
                   href="/user/profile"
