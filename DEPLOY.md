@@ -158,6 +158,9 @@ npx tsx prisma/seed.ts
 
 # 构建
 npm run build
+
+# 复制静态文件到 standalone 目录（重要：Next.js standalone 模式必需，否则 JS/CSS 返回 404）
+cp -r .next/static .next/standalone/.next/
 ```
 
 ### 3.5 首次爬取数据
@@ -341,8 +344,11 @@ npm install
 # 同步数据库
 npx prisma db push
 
-# 重新构建
+# 构建
 npm run build
+
+# 复制静态文件到 standalone 目录（重要：Next.js standalone 模式必需，否则 JS/CSS 返回 404）
+cp -r .next/static .next/standalone/.next/
 
 # 重启服务
 pm2 restart sakura-anime
