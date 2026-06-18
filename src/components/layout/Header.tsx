@@ -162,6 +162,14 @@ export default function Header() {
                   <Clock className="w-4 h-4" />
                   <span className="hidden md:inline text-sm">历史</span>
                 </Link>
+                <Link href="/feedback" className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm">
+                  <Bug className="w-4 h-4" />
+                  <span className="hidden md:inline text-sm">反馈</span>
+                </Link>
+                <Link href="/donate" className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm">
+                  <Coffee className="w-4 h-4" />
+                  <span className="hidden md:inline text-sm">赞赏</span>
+                </Link>
                 {isAdmin && (
                   <Link href="/admin" className="text-muted hover:text-primary transition-colors flex items-center gap-1 text-sm">
                     <Shield className="w-4 h-4" />
