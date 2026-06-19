@@ -125,6 +125,8 @@ curl -X POST http://localhost:3001/api/admin/crawl \
 
 ```bash
 npm run build
+# 复制静态文件（Next.js standalone 模式必需，否则 JS/CSS 404）
+cp -r .next/static .next/standalone/.next/
 npm start
 ```
 
